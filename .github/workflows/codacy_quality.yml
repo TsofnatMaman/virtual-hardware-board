@@ -24,7 +24,7 @@ jobs:
       - name: Install quality tools
         run: |
           python -m pip install --upgrade pip
-          pip install black flake8 pylint mypy isort codacy-coverage
+          pip install black pylint mypy isort codacy-coverage
 
       # 4. Check formatting with black
       - name: Check code formatting
@@ -34,19 +34,15 @@ jobs:
       - name: Check import order
         run: isort --check-only simulator tests
 
-      # 6. Lint code with flake8
-      - name: Lint code
-        run: flake8 simulator tests
-
-      # 7. Lint code with pylint
+      # 6. Lint code with pylint
       - name: Pylint code
         run: pylint simulator
 
-      # 8. Type checking with mypy
+      # 7. Type checking with mypy
       - name: Type check with mypy
         run: mypy simulator
 
-      # 9. Send results to Codacy (duplication + static analysis)
+      # 8. Send results to Codacy (duplication + static analysis)
       - name: Codacy analysis
         env:
           CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}

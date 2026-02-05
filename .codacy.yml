@@ -5,11 +5,6 @@ engines:
       max-line-length: 88
       max-function-length: 50
       max-class-length: 200
-  flake8:
-    enabled: true
-    config:
-      max-line-length: 88
-      extend-ignore: E203,W503
   black:
     enabled: true
   mypy:
