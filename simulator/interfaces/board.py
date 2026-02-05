@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Optional
 
 from simulator.interfaces.memory import BaseMemory
+from simulator.utils.config_loader import Simulator_Config
 
 
 class BaseBoard(ABC):
@@ -23,9 +24,9 @@ class BaseBoard(ABC):
     SRAM_SIZE: int | None = None
 
     # Optional configuration payload (used by builder/factory system)
-    config: Any | None = None
+    config: Simulator_Config | None = None
 
-    def __init__(self, config: Any | None = None, **_kwargs: Any) -> None:
+    def __init__(self, config: Simulator_Config | None = None, **_kwargs: Any) -> None:
         self.config = config
 
     # ====== Core API (Required) ======

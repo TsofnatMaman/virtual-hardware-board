@@ -3,10 +3,16 @@
 from abc import ABC, abstractmethod
 
 from simulator.interfaces.peripheral import BasePeripherals
+from simulator.utils.config_loader import Memory_Config
 
 
 class BaseMemory(ABC):
     """Absract interface for memory-mapped storage and peripherals."""
+
+    memory_config: Memory_Config | None = None
+
+    def __init__(self, mem_config: Memory_Config):
+        self.memory_config = mem_config
 
     @abstractmethod
     def read(self, address: int, size: int) -> int:
