@@ -22,7 +22,7 @@ jobs:
       - name: Install Python quality tools
         run: |
           python -m pip install --upgrade pip
-          pip install black pylint mypy isort radon flake8 codacy-coverage
+          pip install black pylint mypy isort radon flake8 codacy-coverage pytest pytest-cov
 
       - name: Check code formatting
         run: black --check simulator tests
@@ -39,7 +39,10 @@ jobs:
       - name: Check code complexity
         run: radon cc simulator -a
 
-      - name: Send analysis to Codacy
-        run: python-codacy-coverage
+      - name: Run tests and generate coverage
+        run: pytest --cov=simulator --cov-report=xml
+
+      - name: Send analysis and coverage to Codacy
+        run: python-codacy-coverage -r coverage.xml
         env:
           CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
