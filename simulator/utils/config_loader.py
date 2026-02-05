@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from ..core.exceptions import ConfigurationError
 
@@ -163,6 +163,8 @@ def load_config(board_name: str, path: Optional[str] = None) -> Simulator_Config
 
 def get_config(board_name: str) -> Simulator_Config:
     """Return the loaded config, loading default if necessary."""
+    global _LOADER_CONFIG
     if _LOADER_CONFIG is None:
-        globals()["_LOADER_CONFIG"] = load_config(board_name=board_name)
+        _LOADER_CONFIG = load_config(board_name=board_name)
+    assert _LOADER_CONFIG is not None
     return _LOADER_CONFIG

@@ -1,4 +1,4 @@
-from interfaces.board import BaseBoard
+from simulator.interfaces.board import BaseBoard
 
 
 class TM4C123_Board(BaseBoard):
