@@ -128,6 +128,13 @@ class CheckRunner:
             "Mypy Type Checking",
         )
 
+    def check_vulture(self) -> bool:
+        """Check for dead code with Vulture."""
+        return self.run_command(
+            ["vulture", ".", "--exclude", "tests"],
+            "Vulture Dead Code Check",
+        )
+
     def check_radon_complexity(self) -> bool:
         """Check code complexity with Radon."""
         return self.run_command(
@@ -139,7 +146,7 @@ class CheckRunner:
     def run_tests(self) -> bool:
         """Run pytest with coverage."""
         return self.run_command(
-            ["pytest", "--cov=simulator", "--cov-report=term-missing", *DIRS_TO_CHECK],
+            ["pytest", "--cov=simulator", "--cov-report=term-missing", "--cov-report=xml", *DIRS_TO_CHECK],
             "Pytest + Coverage",
             show_output=True,
         )
@@ -179,6 +186,7 @@ class CheckRunner:
             ("imports", self.check_isort_imports),
             ("lint", self.check_pylint),
             ("type", self.check_mypy),
+            ("deadcode", self.check_vulture),
             ("complexity", self.check_radon_complexity),
             ("tests", self.run_tests),
         ]
@@ -200,7 +208,7 @@ def main() -> int:
 Examples:
   python run_quality_checks.py              # Run all checks
   python run_quality_checks.py --fix        # Run + auto-fix formatting/imports
-  python run_quality_checks.py --skip lint  # Skip linting check
+  python run_quality_checks.py --skip deadcode  # Skip dead code check
   python run_quality_checks.py --fix --verbose  # Auto-fix with detailed output
         """,
     )
@@ -224,7 +232,7 @@ Examples:
         "--skip",
         nargs="+",
         default=[],
-        help="Skip specific checks (formatting, imports, lint, type, complexity, tests)",
+        help="Skip specific checks (formatting, imports, lint, type, deadcode, complexity, tests)",
     )
 
     args = parser.parse_args()

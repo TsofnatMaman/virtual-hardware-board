@@ -25,26 +25,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-          # הערה: הסרתי את codacy-coverage כי אנחנו עוברים לשיטה החדשה
-          pip install black pylint mypy isort radon flake8 pytest pytest-cov pyyaml
+          pip install black pylint mypy isort radon vulture pytest pytest-cov pyyaml
 
-      - name: Check code formatting
-        run: black --check simulator tests
-
-      - name: Check import order
-        run: isort --check-only simulator tests
-
-      - name: Lint code with Pylint
-        run: pylint simulator
-
-      - name: Type checking with Mypy
-        run: mypy simulator
-
-      - name: Check code complexity
-        run: radon cc simulator -a
-
-      - name: Run tests and generate coverage
-        run: pytest --cov=simulator --cov-report=xml
+      - name: Run quality checks and tests
+        run: python run_quality_checks.py
 
       - name: Send coverage to Codacy
         env:
