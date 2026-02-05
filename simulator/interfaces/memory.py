@@ -2,12 +2,18 @@
 
 from abc import ABC, abstractmethod
 
-from simulator.interfaces.peripheral import BasePeripherals
 from simulator.utils.config_loader import Memory_Config
 
 
 class BaseMemory(ABC):
-    """Absract interface for memory-mapped storage and peripherals."""
+    """Absract interface for memory-mapped storage.
+
+    Responsibilities:
+    - Manage FLASH, SRAM, Bitband memory regions
+    - Handle read/write operations with alignment and bounds checking
+    - Support peripheral registration via bus interface
+    - Pure storage - does NOT own peripherals
+    """
 
     memory_config: Memory_Config | None = None
 
@@ -16,21 +22,21 @@ class BaseMemory(ABC):
 
     @abstractmethod
     def read(self, address: int, size: int) -> int:
-        """Read a value from memory or peripheral.
+        """Read a value from memory.
 
         Args:
             address: Memory address to read
             size: Number of bytes (1, 2 or 4)
 
         Returns:
-            Interger value read
+            Integer value read
         """
 
         raise NotImplementedError
 
     @abstractmethod
     def write(self, address: int, size: int, value: int) -> None:
-        """Write a value to memory or peripheral.
+        """Write a value to memory.
 
         Args:
             address: Memory address to write
@@ -39,12 +45,13 @@ class BaseMemory(ABC):
         """
         raise NotImplementedError
 
-    @property
     @abstractmethod
-    def peripherals(self) -> dict[int, BasePeripherals]:
-        """Get all peripherals mapped in memory.
+    def reset(self) -> None:
+        """Reset memory to power-on state.
 
-        Returns:
-            Dictionary mapping base addresses to peripheral instances
+        Clears SRAM (volatile), leaves FLASH unchanged (persistent).
+        Peripheral state is managed separately by peripherals themselves.
         """
+
+    def reset(self) -> None:
         raise NotImplementedError

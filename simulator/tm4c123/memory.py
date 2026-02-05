@@ -88,11 +88,18 @@ class TM4C123_Memory(BaseMemory):
 
         raise MemoryAccessError(address)
 
-    @property
     @override
-    def peripherals(self) -> dict[int, BasePeripherals]:
-        return {base: mapping.instance for base, mapping in self._peripherals.items()}
+    def reset(self) -> None:
+        """Reset memory to power-on state.
 
+        Clears SRAM (volatile, power-dependent).
+        FLASH is left unchanged (persistent, non-volatile).
+        """
+        self._sram[:] = bytearray(len(self._sram))
+        self._flash[:] = bytearray(len(self._flash))
+    
+        self._peripherals = {}
+        
     # ==========================================================
     # Address classification
     # ==========================================================

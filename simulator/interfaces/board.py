@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
+from simulator.interfaces.cpu import BaseCPU
 from simulator.interfaces.memory import BaseMemory
+from simulator.interfaces.peripheral import BasePeripherals
 from simulator.utils.config_loader import Simulator_Config
 
 
@@ -13,15 +15,12 @@ class BaseBoard(ABC):
     """Abstract interface for simulated embedded boards.
 
     Responsibilities:
-    - Manage memory and peripherals
-    - Aggregate interrupts from periphals
-    - Expose board state in a GUI-agnostic form
+    - Own and manage CPU (processor that masters memory bus)
+    - Own and manage Memory (storage for code and data)
+    - Own and manage Peripherals (GPIO, UART, Timers, etc.)
+    - Control board lifecycle (reset, power management, etc.)
+    - Expose components for observation/debugging
     """
-
-    # Optional board metadata (override in concrete implementations)
-    FLASH_BASE: int | None = None
-    SRAM_BASE: int | None = None
-    SRAM_SIZE: int | None = None
 
     # Optional configuration payload (used by builder/factory system)
     config: Simulator_Config | None = None
@@ -33,31 +32,40 @@ class BaseBoard(ABC):
 
     @property
     @abstractmethod
-    def memory(self) -> BaseMemory:
-        """Get the board's memory map.
+    def cpu(self) -> BaseCPU:
+        """Get the board's CPU (processor that masters memory bus).
 
         Returns:
-            BaseMemory instance managing address space
+            BaseCPU instance managing instruction execution
+        """
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def memory(self) -> BaseMemory:
+        """Get the board's memory (storage for code and data).
+
+        Returns:
+            BaseMemory instance managing address space (FLASH, SRAM, etc.)
+        """
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def peripherals(self) -> dict[str, BasePeripherals]:
+        """Get the board's peripherals (GPIO, UART, Timers, etc.).
+
+        Returns:
+            Dictionary mapping peripheral names to instances
         """
         raise NotImplementedError
 
     @abstractmethod
     def reset(self) -> None:
-        """Reset board and all peripherals to power-on state."""
-        raise NotImplementedError
+        """Reset board to power-on state.
 
-    @abstractmethod
-    def get_pending_interrupt(self) -> Optional[int]:
-        """Get pending interrupt request number.
-
-        Returns:
-            IRQ number if interrupt pending, None otherwise
+        Resets CPU and all peripherals.
         """
-        raise NotImplementedError
-
-    @abstractmethod
-    def clear_pending_interrupt(self) -> None:
-        """Clear the current pending interrupt."""
         raise NotImplementedError
 
     # ====== Optional API (Extensible) ======
@@ -80,13 +88,3 @@ class BaseBoard(ABC):
         """
 
         return "Unknown"
-
-    # ====== Convenience Properties ======
-    @property
-    def has_pending_interrupt(self) -> bool:
-        """Check if  interrupt is pending.
-
-        Returns:
-            True if interrupt pending, False otherwise
-        """
-        return self.get_pending_interrupt() is not None
