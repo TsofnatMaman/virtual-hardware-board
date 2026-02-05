@@ -1,7 +1,7 @@
 """Helpers for loading and caching simulator board configuration."""
 
 # pylint: disable=invalid-name,too-many-instance-attributes
-# pylint: disable=missing-class-docstring,import-error
+# pylint: disable=missing-class-docstring,import-error,global-statement
 
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -163,6 +163,7 @@ def load_config(board_name: str, path: Optional[str] = None) -> Simulator_Config
 
 def get_config(board_name: str) -> Simulator_Config:
     """Return the loaded config, loading default if necessary."""
+    global _LOADER_CONFIG
     if _LOADER_CONFIG is None:
         _LOADER_CONFIG = load_config(board_name=board_name)
     assert _LOADER_CONFIG is not None
