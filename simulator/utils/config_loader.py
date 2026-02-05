@@ -76,7 +76,8 @@ _LOADER_CONFIG: Optional[Simulator_Config] = None
 def _ensure_yaml_available() -> None:
     if yaml is None:
         raise ConfigurationError(
-            "PyYAML is required to load simulator config files. " "Install 'pyyaml'."
+            "PyYAML is required to load simulator config files. "
+            "Install 'pyyaml'."
         )
 
 
@@ -130,14 +131,18 @@ def _parse_simulator_cfg_from_dict(raw: Dict[str, Any]) -> Simulator_Config:
             ),
         )
     except KeyError as exc:
-        raise ConfigurationError(f"Missing required config key: {exc}") from exc
+        raise ConfigurationError(
+            f"Missing required config key: {exc}"
+        ) from exc
     except TypeError as exc:
         raise ConfigurationError(f"Invalid config schema: {exc}") from exc
 
     return cfg
 
 
-def load_config(board_name: str, path: Optional[str] = None) -> Simulator_Config:
+def load_config(
+    board_name: str, path: Optional[str] = None
+) -> Simulator_Config:
     """Load and validate configuration from a YAML file.
 
     Args:
@@ -158,6 +163,7 @@ def load_config(board_name: str, path: Optional[str] = None) -> Simulator_Config
 
 def get_config(board_name: str) -> Simulator_Config:
     """Return the loaded config, loading default if necessary."""
+    global _LOADER_CONFIG
     if _LOADER_CONFIG is None:
-        return load_config(board_name=board_name)
+        _LOADER_CONFIG = load_config(board_name=board_name)
     return _LOADER_CONFIG

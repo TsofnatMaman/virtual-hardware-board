@@ -237,7 +237,11 @@ class TestLoadYamlFile:
             "util": {"mask_32bit": 0xFFFFFFFF},
         }
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            suffix=".yaml",
+            delete=False,
+        ) as f:
             yaml.dump(yaml_content, f)
             f.flush()
             path = Path(f.name)
@@ -250,7 +254,11 @@ class TestLoadYamlFile:
 
     def test_load_invalid_yaml(self):
         """Test loading an invalid YAML file."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            suffix=".yaml",
+            delete=False,
+        ) as f:
             f.write("{ invalid: yaml: content")
             f.flush()
             path = Path(f.name)
@@ -450,7 +458,11 @@ class TestLoadConfig:
             },
         }
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            suffix=".yaml",
+            delete=False,
+        ) as f:
             yaml.dump(yaml_content, f)
             f.flush()
             path = f.name
@@ -473,7 +485,11 @@ class TestLoadConfig:
 
     def test_load_config_malformed_yaml(self):
         """Test loading malformed YAML."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            suffix=".yaml",
+            delete=False,
+        ) as f:
             f.write("{ invalid: yaml")
             f.flush()
             path = f.name
@@ -499,9 +515,14 @@ class TestGetConfig:
         )
 
     def test_get_config_loads_default_when_none(self):
-        """Test that get_config loads default config when _LOADER_CONFIG is None."""
-        with patch("simulator.utils.config_loader._LOADER_CONFIG", None):
-            with patch("simulator.utils.config_loader.load_config") as mock_load:
+        """Load default config when cache is empty."""
+        with patch(
+            "simulator.utils.config_loader._LOADER_CONFIG",
+            None,
+        ):
+            with patch(
+                "simulator.utils.config_loader.load_config"
+            ) as mock_load:
                 mock_config = Mock(spec=Simulator_Config)
                 mock_load.return_value = mock_config
 
@@ -510,12 +531,21 @@ class TestGetConfig:
                 mock_load.assert_called_once_with(board_name="tm4c123")
                 assert result == mock_config
 
-    def test_get_config_returns_cached_config(self, valid_simulator_config_dict):
-        """Test that get_config returns cached config when available."""
-        mock_config = _parse_simulator_cfg_from_dict(valid_simulator_config_dict)
+    def test_get_config_returns_cached_config(
+        self, valid_simulator_config_dict
+    ):
+        """Return cached config when available."""
+        mock_config = _parse_simulator_cfg_from_dict(
+            valid_simulator_config_dict
+        )
 
-        with patch("simulator.utils.config_loader._LOADER_CONFIG", mock_config):
-            with patch("simulator.utils.config_loader.load_config") as mock_load:
+        with patch(
+            "simulator.utils.config_loader._LOADER_CONFIG",
+            mock_config,
+        ):
+            with patch(
+                "simulator.utils.config_loader.load_config"
+            ) as mock_load:
                 result = get_config("tm4c123")
 
                 # load_config should not be called
@@ -523,9 +553,14 @@ class TestGetConfig:
                 assert result == mock_config
 
     def test_get_config_uses_board_name_parameter(self):
-        """Test that get_config passes board_name to load_config."""
-        with patch("simulator.utils.config_loader._LOADER_CONFIG", None):
-            with patch("simulator.utils.config_loader.load_config") as mock_load:
+        """Pass board_name argument to load_config."""
+        with patch(
+            "simulator.utils.config_loader._LOADER_CONFIG",
+            None,
+        ):
+            with patch(
+                "simulator.utils.config_loader.load_config"
+            ) as mock_load:
                 mock_config = Mock(spec=Simulator_Config)
                 mock_load.return_value = mock_config
 

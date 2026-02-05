@@ -60,7 +60,7 @@ class TestConfigurationError:
     """Test ConfigurationError exception class."""
 
     def test_configuration_error_with_message_only(self):
-        """Test ConfigurationError with only a message (treated as config_key)."""
+        """ConfigurationError with only a message (treated as config_key)."""
         exc = ConfigurationError(config_key="Missing config key")
 
         assert "configuration" in str(exc).lower()
@@ -95,7 +95,7 @@ class TestConfigurationError:
         assert "Something is wrong" in str(exc)
 
     def test_configuration_error_message_none_uses_key_as_message(self):
-        """Test ConfigurationError where message is None uses key as message."""
+        """ConfigurationError where message is None uses key as message."""
         exc = ConfigurationError(config_key="api_key")
 
         assert "api_key" in str(exc)
@@ -133,8 +133,12 @@ class TestConfigurationError:
         assert exc.details["key"] == "memory.flash_size"
 
     def test_configuration_error_none_details_defaults_to_empty(self):
-        """Test that None details defaults to empty dict."""
-        exc = ConfigurationError(config_key="test", message="test error", details=None)
+        """None details defaults to empty dict."""
+        exc = ConfigurationError(
+            config_key="test",
+            message="test error",
+            details=None,
+        )
 
         assert exc.details == {}
 
@@ -148,7 +152,7 @@ class TestExceptionBehavior:
             raise ConfigurationError(config_key="test")
 
     def test_catch_configuration_error_does_not_catch_all(self):
-        """Test that catching ConfigurationError does not catch base SimulatorError."""
+        """Catching ConfigurationError does not catch base SimulatorError."""
         with pytest.raises(SimulatorError):
             with pytest.raises(ConfigurationError):
                 raise SimulatorError("test")
