@@ -10,40 +10,32 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     steps:
-      # 1. Checkout the code
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Setup Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.13
 
-      # 3. Install tools
       - name: Install quality tools
         run: |
           python -m pip install --upgrade pip
-          pip install black pylint mypy isort codacy-coverage
+          pip install black pylint mypy isort codacy-analysis-cli
 
-      # 4. Check formatting with black
       - name: Check code formatting
         run: black --check simulator tests
 
-      # 5. Check import order with isort
       - name: Check import order
         run: isort --check-only simulator tests
 
-      # 6. Lint code with pylint
-      - name: Pylint code
+      - name: Lint code
         run: pylint simulator
 
-      # 7. Type checking with mypy
-      - name: Type check with mypy
+      - name: Type checking
         run: mypy simulator
 
-      # 8. Send results to Codacy (duplication + static analysis)
       - name: Codacy analysis
+        run: npx @codacy/cli analyze
         env:
           CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
-        run: python-codacy-coverage -r /dev/null
