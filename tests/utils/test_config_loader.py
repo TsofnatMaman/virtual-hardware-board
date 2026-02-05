@@ -419,9 +419,7 @@ class TestParseSimulatorCfgFromDict:
 class TestLoadConfig:
     """Test load_config function."""
 
-    def test_load_config_success(
-        self, temp_yaml_file, minimal_simulator_config_dict
-    ):
+    def test_load_config_success(self, temp_yaml_file, minimal_simulator_config_dict):
         """Test successfully loading configuration."""
         with temp_yaml_file.open("w", encoding="utf-8") as fh:
             yaml.dump(minimal_simulator_config_dict, fh)
