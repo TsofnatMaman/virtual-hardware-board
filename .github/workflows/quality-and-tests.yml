@@ -44,6 +44,9 @@ jobs:
       - name: Run tests and generate coverage
         run: pytest --cov=simulator --cov-report=xml
 
+      - name: Check coverage file
+        run: ls -l coverage.xml
+
       - name: Send analysis and coverage to Codacy
         run: python-codacy-coverage -r coverage.xml
         env:
