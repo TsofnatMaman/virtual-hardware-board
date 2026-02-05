@@ -1,3 +1,5 @@
+"""Abstract memory interface for the simulator."""
+
 from abc import ABC, abstractmethod
 
 from simulator.interfaces.peripheral import BasePeripherals
@@ -18,7 +20,7 @@ class BaseMemory(ABC):
             Interger value read
         """
 
-        ...
+        raise NotImplementedError
 
     @abstractmethod
     def write(self, address: int, size: int, value: int) -> None:
@@ -29,7 +31,7 @@ class BaseMemory(ABC):
             size: Number of bytes (1, 2 or 4)
             value: Integer value to write
         """
-        ...
+        raise NotImplementedError
 
     @property
     @abstractmethod
@@ -39,4 +41,4 @@ class BaseMemory(ABC):
         Returns:
             Dictionary mapping base addresses to peripheral instances
         """
-        return {}
+        raise NotImplementedError

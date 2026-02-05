@@ -1,3 +1,5 @@
+"""Custom exceptions used throughout the simulator package."""
+
 from typing import Any, Optional
 
 

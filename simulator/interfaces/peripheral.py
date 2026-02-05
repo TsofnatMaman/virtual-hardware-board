@@ -1,3 +1,5 @@
+"""Abstract peripheral interface definitions."""
+
 from abc import ABC, abstractmethod
 
 
@@ -12,7 +14,7 @@ class BasePeripherals(ABC):
             offset: Register offset in bytes
             value: 32-bit value to write
         """
-        ...
+        raise NotImplementedError
 
     @abstractmethod
     def read_register(self, offset: int) -> int:
@@ -24,7 +26,7 @@ class BasePeripherals(ABC):
         Returns:
             32-bit register value
         """
-        ...
+        raise NotImplementedError
 
     @abstractmethod
     def write_data_masked(self, offset: int, value: int, mask: int) -> None:
@@ -35,7 +37,7 @@ class BasePeripherals(ABC):
             value: Value to write to masked bits
             mask: Bitmask specifying which bits to modify
         """
-        ...
+        raise NotImplementedError
 
     @abstractmethod
     def read_data_masked(self, offset: int, mask: int) -> int:
@@ -48,9 +50,9 @@ class BasePeripherals(ABC):
         Returns:
             Masked register value
         """
-        ...
+        raise NotImplementedError
 
     @abstractmethod
     def reset(self) -> None:
         """Reset peripheral to power-on state."""
-        ...
+        raise NotImplementedError

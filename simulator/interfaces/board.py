@@ -38,12 +38,12 @@ class BaseBoard(ABC):
         Returns:
             BaseMemory instance managing address space
         """
-        ...
+        raise NotImplementedError
 
     @abstractmethod
     def reset(self) -> None:
         """Reset board and all peripherals to power-on state."""
-        ...
+        raise NotImplementedError
 
     @abstractmethod
     def get_pending_interrupt(self) -> Optional[int]:
@@ -52,12 +52,12 @@ class BaseBoard(ABC):
         Returns:
             IRQ number if interrupt pending, None otherwise
         """
-        ...
+        raise NotImplementedError
 
     @abstractmethod
     def clear_pending_interrupt(self) -> None:
         """Clear the current pending interrupt."""
-        ...
+        raise NotImplementedError
 
     # ====== Optional API (Extensible) ======
 
