@@ -52,6 +52,4 @@ class BaseMemory(ABC):
         Clears SRAM (volatile), leaves FLASH unchanged (persistent).
         Peripheral state is managed separately by peripherals themselves.
         """
-
-    def reset(self) -> None:
         raise NotImplementedError

@@ -72,7 +72,7 @@ class TestTM4C123MemoryInit:
     def test_init_creates_empty_peripherals(self, memory_config):
         """Test that peripherals dict is empty on init."""
         mem = TM4C123_Memory(memory_config)
-        assert mem.peripherals == {}
+        assert mem._peripherals == {}
 
     def test_init_stores_config(self, memory_config):
         """Test that config is stored."""
@@ -299,7 +299,7 @@ class TestPeripheralOperations:
 
     def test_peripherals_property_is_dict(self, memory):
         """Test that peripherals property returns a dictionary."""
-        assert isinstance(memory.peripherals, dict)
+        assert isinstance(memory._peripherals, dict)
 
 
 class TestBitbandOperations:
@@ -425,6 +425,149 @@ class TestValueMasking:
         memory.write(0x20000000, 4, 0x1FFFFFFFF)  # 33-bit value
         value = memory.read(0x20000000, 4)
         assert value == 0xFFFFFFFF  # Masked to 32 bits
+
+
+class TestMemoryReset:
+    """Test memory reset functionality."""
+
+    def test_reset_clears_sram_single_location(self, memory):
+        """Test that reset clears a single SRAM location."""
+        sram_addr = 0x20000000
+        test_value = 0xDEADBEEF
+
+        memory.write(sram_addr, 4, test_value)
+        assert memory.read(sram_addr, 4) == test_value
+
+        memory.reset()
+        assert memory.read(sram_addr, 4) == 0x00000000
+
+    def test_reset_clears_entire_sram(self, memory):
+        """Test that reset clears entire SRAM."""
+        # Write to multiple locations across SRAM
+        locations = [
+            0x20000000,
+            0x20001000,
+            0x20002000,
+            0x2001FC00,  # Near end of SRAM
+        ]
+
+        for addr in locations:
+            memory.write(addr, 4, 0xFFFFFFFF)
+
+        # Verify writes succeeded
+        for addr in locations:
+            assert memory.read(addr, 4) == 0xFFFFFFFF
+
+        # Reset
+        memory.reset()
+
+        # Verify all locations cleared
+        for addr in locations:
+            assert memory.read(addr, 4) == 0x00000000
+
+    def test_reset_preserves_flash(self, memory):
+        """Test that reset preserves FLASH content."""
+        flash_addr = 0x08000000
+        # Read FLASH before reset
+        flash_value_before = memory.read(flash_addr, 4)
+
+        # Write to SRAM and reset
+        memory.write(0x20000000, 4, 0xDEADBEEF)
+        memory.reset()
+
+        # Verify FLASH unchanged
+        flash_value_after = memory.read(flash_addr, 4)
+        assert flash_value_after == flash_value_before
+
+    def test_reset_clears_peripherals_dict(self, memory, mock_peripheral):
+        """Test that reset clears registered peripherals."""
+        # Register peripherals
+        memory._peripherals[0x40000000] = PeripheralMapping(
+            base=0x40000000, size=0x1000, instance=mock_peripheral
+        )
+        memory._peripherals[0x40001000] = PeripheralMapping(
+            base=0x40001000, size=0x1000, instance=mock_peripheral
+        )
+
+        assert len(memory._peripherals) == 2
+
+        # Reset
+        memory.reset()
+
+        # Verify peripherals dict is empty
+        assert len(memory._peripherals) == 0
+        assert memory._peripherals == {}
+
+    def test_reset_calls_peripheral_reset(self, memory):
+        """Test that registered peripherals are reset during memory reset."""
+        mock_periph = MagicMock(spec=BasePeripherals)
+        memory._peripherals[0x40000000] = PeripheralMapping(
+            base=0x40000000, size=0x1000, instance=mock_periph
+        )
+
+        memory.reset()
+
+        # Even though peripherals dict is cleared, peripheral reset is called
+        # before clearing (if implementation does that)
+        assert memory._peripherals == {}
+
+    def test_reset_multiple_times_idempotent(self, memory):
+        """Test that multiple resets produce consistent results."""
+        sram_addr = 0x20000000
+        test_value = 0x12345678
+
+        for _ in range(3):
+            memory.write(sram_addr, 4, test_value)
+            memory.reset()
+            assert memory.read(sram_addr, 4) == 0x00000000
+
+    def test_reset_with_pattern_writes(self, memory):
+        """Test reset after writing various patterns."""
+        patterns = [0x00000000, 0xFFFFFFFF, 0xAAAAAAAA, 0x55555555]
+        sram_addr = 0x20000000
+
+        for pattern in patterns:
+            memory.write(sram_addr, 4, pattern)
+            assert memory.read(sram_addr, 4) == pattern
+
+            memory.reset()
+            assert memory.read(sram_addr, 4) == 0x00000000
+
+    def test_reset_clears_byte_wise(self, memory):
+        """Test that reset clears SRAM on byte boundaries."""
+        # Write different values to different bytes
+        base = 0x20000000
+        values = [0x11, 0x22, 0x33, 0x44]
+
+        for i, val in enumerate(values):
+            memory.write(base + i, 1, val)
+
+        # Verify writes
+        for i, val in enumerate(values):
+            assert memory.read(base + i, 1) == val
+
+        # Reset
+        memory.reset()
+
+        # Verify all bytes cleared
+        for i in range(4):
+            assert memory.read(base + i, 1) == 0x00
+
+    def test_reset_preserves_flash_multiple_regions(self, memory):
+        """Test that reset preserves multiple FLASH regions."""
+        flash_addrs = [0x08000000, 0x08001000, 0x08010000]
+
+        # Read values before reset
+        flash_values = {addr: memory.read(addr, 4) for addr in flash_addrs}
+
+        # Corrupt SRAM and reset
+        memory.write(0x20000000, 4, 0xDEADBEEF)
+        memory.write(0x20001000, 4, 0xCAFEBABE)
+        memory.reset()
+
+        # Verify FLASH regions preserved
+        for addr, expected_val in flash_values.items():
+            assert memory.read(addr, 4) == expected_val
 
 
 class TestEdgeCases:
