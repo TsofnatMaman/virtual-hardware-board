@@ -40,6 +40,6 @@ jobs:
         run: radon cc simulator -a
 
       - name: Send analysis to Codacy
-        run: python-codacy-coverage -r /dev/null
+        run: python-codacy-coverage
         env:
           CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
