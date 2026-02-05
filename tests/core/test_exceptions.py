@@ -1,6 +1,6 @@
 import pytest
 
-from simulator.core.exceptions import SimulatorError, ConfigurationError
+from simulator.core.exceptions import ConfigurationError, SimulatorError
 
 
 class TestSimulatorError:

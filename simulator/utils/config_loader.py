@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
-
-from typing import Dict, Optional, Any
-import yaml
 from pathlib import Path
+from typing import Any, Dict, Optional
+
+import yaml
 
 from ..core.exceptions import ConfigurationError
 

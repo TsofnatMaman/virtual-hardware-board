@@ -3,17 +3,16 @@ Pytest configuration and shared fixtures for the simulator test suite.
 """
 
 import sys
+import tempfile
 from pathlib import Path
+
+import pytest
+import yaml
 
 # Ensure project root is on PYTHONPATH so 'simulator' can be imported
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
-
-import pytest
-import tempfile
-import yaml
-from pathlib import Path
 
 
 @pytest.fixture

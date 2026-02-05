@@ -12,4 +12,4 @@ class TM4C123_Board(BaseBoard):
     """
 
     # Board memory characteristics (used by CPU / loader validation)
-    FLASH_BASE: int = consts.FLASH_BASE
+    # FLASH_BASE: int = consts.FLASH_BASE
