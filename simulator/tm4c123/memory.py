@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, cast
-
-from overrides import override  # type: ignore
+from typing import cast, override
 
 from simulator.core.exceptions import (
     MemoryAccessError,

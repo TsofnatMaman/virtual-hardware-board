@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
-
-from overrides import override  # type: ignore
+from typing import Any, override
 
 from simulator.interfaces.board import BaseBoard
 from simulator.interfaces.memory import BaseMemory
