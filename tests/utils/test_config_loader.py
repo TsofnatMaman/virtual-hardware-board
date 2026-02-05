@@ -520,9 +520,7 @@ class TestGetConfig:
             "simulator.utils.config_loader._LOADER_CONFIG",
             None,
         ):
-            with patch(
-                "simulator.utils.config_loader.load_config"
-            ) as mock_load:
+            with patch("simulator.utils.config_loader.load_config") as mock_load:
                 mock_config = Mock(spec=Simulator_Config)
                 mock_load.return_value = mock_config
 
@@ -531,21 +529,15 @@ class TestGetConfig:
                 mock_load.assert_called_once_with(board_name="tm4c123")
                 assert result == mock_config
 
-    def test_get_config_returns_cached_config(
-        self, valid_simulator_config_dict
-    ):
+    def test_get_config_returns_cached_config(self, valid_simulator_config_dict):
         """Return cached config when available."""
-        mock_config = _parse_simulator_cfg_from_dict(
-            valid_simulator_config_dict
-        )
+        mock_config = _parse_simulator_cfg_from_dict(valid_simulator_config_dict)
 
         with patch(
             "simulator.utils.config_loader._LOADER_CONFIG",
             mock_config,
         ):
-            with patch(
-                "simulator.utils.config_loader.load_config"
-            ) as mock_load:
+            with patch("simulator.utils.config_loader.load_config") as mock_load:
                 result = get_config("tm4c123")
 
                 # load_config should not be called
@@ -558,9 +550,7 @@ class TestGetConfig:
             "simulator.utils.config_loader._LOADER_CONFIG",
             None,
         ):
-            with patch(
-                "simulator.utils.config_loader.load_config"
-            ) as mock_load:
+            with patch("simulator.utils.config_loader.load_config") as mock_load:
                 mock_config = Mock(spec=Simulator_Config)
                 mock_load.return_value = mock_config
 
