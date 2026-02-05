@@ -34,7 +34,7 @@ brew install arm-none-eabi-gcc
 ```
 
 **Windows:**
-Download from: https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm
+Download from: <https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm>
 
 ### Compile
 
