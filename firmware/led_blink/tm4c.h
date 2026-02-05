@@ -2,6 +2,7 @@
 #ifndef TM4C_H
 #define TM4C_H
 
+// cppcheck-suppress missingIncludeSystem
 #include <stdint.h>
 
 // Base addresses and registers for Port F on TM4C123

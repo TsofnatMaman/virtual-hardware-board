@@ -37,85 +37,81 @@ def temp_yaml_file():
         temp_path.unlink()
 
 
+MEMORY_CFG = {
+    "flash_base": 0x08000000,
+    "flash_size": 524288,
+    "sram_base": 0x20000000,
+    "sram_size": 131072,
+    "periph_base": 0x40000000,
+    "periph_size": 0x00100000,
+    "bitband_base": 0x42000000,
+    "bitband_size": 0x02000000,
+}
+
+UTIL_CFG = {"mask_32bit": 0xFFFFFFFF, "mask_8bit": 0xFF}
+
+GPIO_PORTS = {
+    "A": 0x40004000,
+    "B": 0x40005000,
+    "C": 0x40006000,
+    "D": 0x40007000,
+    "E": 0x40024000,
+    "F": 0x40025000,
+}
+
+GPIO_OFFSETS = {
+    "data": 0x000,
+    "dir": 0x400,
+    "den": 0x51C,
+    "lock": 0x520,
+    "cr": 0x524,
+    "icr": 0x41C,
+}
+
+SYSCTL_CFG = {
+    "base": 0x400FE000,
+    "registers": {
+        "rcgcgpio": 0x608,
+        "rcgctimer": 0x604,
+        "rcgcuart": 0x618,
+        "rcgcssi": 0x61C,
+        "rcgci2c": 0x620,
+        "rcgcpwm": 0x640,
+        "rcgcadc": 0x638,
+    },
+}
+
+PIN_MASKS = {
+    "PIN0": 0x01,
+    "PIN1": 0x02,
+    "PIN2": 0x04,
+    "PIN3": 0x08,
+    "PIN4": 0x10,
+    "PIN5": 0x20,
+    "PIN6": 0x40,
+}
+
+PINS_CFG = {
+    "pin_masks": PIN_MASKS,
+    "leds": {"LED1": 0x01, "LED2": 0x02},
+    "switches": {"SW1": 0x01, "SW2": 0x02},
+}
+
+NVIC_CFG = {"irq": {"timer": 19, "gpio": 0}, "irq_offset": 16}
+
+
 @pytest.fixture
 def valid_simulator_config_dict():
     """
     Fixture providing a complete valid simulator configuration dictionary.
-
-    Returns:
-        dict: A complete configuration for the Simulator_Config
     """
     return {
-        "memory": {
-            "flash_base": 0x08000000,
-            "flash_size": 524288,
-            "sram_base": 0x20000000,
-            "sram_size": 131072,
-            "periph_base": 0x40000000,
-            "periph_size": 0x00100000,
-            "bitband_base": 0x42000000,
-            "bitband_size": 0x02000000,
-        },
-        "util": {
-            "mask_32bit": 0xFFFFFFFF,
-            "mask_8bit": 0xFF,
-        },
-        "gpio": {
-            "ports": {
-                "A": 0x40004000,
-                "B": 0x40005000,
-                "C": 0x40006000,
-                "D": 0x40007000,
-                "E": 0x40024000,
-                "F": 0x40025000,
-            },
-            "offsets": {
-                "data": 0x000,
-                "dir": 0x400,
-                "den": 0x51C,
-                "lock": 0x520,
-                "cr": 0x524,
-                "icr": 0x41C,
-            },
-        },
-        "sysctl": {
-            "base": 0x400FE000,
-            "registers": {
-                "rcgcgpio": 0x608,
-                "rcgctimer": 0x604,
-                "rcgcuart": 0x618,
-                "rcgcssi": 0x61C,
-                "rcgci2c": 0x620,
-                "rcgcpwm": 0x640,
-                "rcgcadc": 0x638,
-            },
-        },
-        "pins": {
-            "pin_masks": {
-                "PIN0": 0x01,
-                "PIN1": 0x02,
-                "PIN2": 0x04,
-                "PIN3": 0x08,
-                "PIN4": 0x10,
-                "PIN5": 0x20,
-                "PIN6": 0x40,
-            },
-            "leds": {
-                "LED1": 0x01,
-                "LED2": 0x02,
-            },
-            "switches": {
-                "SW1": 0x01,
-                "SW2": 0x02,
-            },
-        },
-        "nvic": {
-            "irq": {
-                "timer": 19,
-                "gpio": 0,
-            },
-            "irq_offset": 16,
-        },
+        "memory": MEMORY_CFG,
+        "util": UTIL_CFG,
+        "gpio": {"ports": GPIO_PORTS, "offsets": GPIO_OFFSETS},
+        "sysctl": SYSCTL_CFG,
+        "pins": PINS_CFG,
+        "nvic": NVIC_CFG,
     }
 
 

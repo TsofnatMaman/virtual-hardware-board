@@ -104,6 +104,14 @@ def _load_yaml_file(path: Path) -> Dict[str, Any]:
     return raw
 
 
+def _build_nvic_cfg(nvic_raw: Dict[str, Any]) -> NVIC_Config:
+    """Convert NVIC section to NVIC_Config with defaults."""
+    return NVIC_Config(
+        irq={k: int(v) for k, v in nvic_raw.get("irq", {}).items()},
+        irq_offset=int(nvic_raw.get("irq_offset", 16)),
+    )
+
+
 def _parse_simulator_cfg_from_dict(raw: Dict[str, Any]) -> Simulator_Config:
     try:
         mem = raw["memory"]
@@ -111,7 +119,7 @@ def _parse_simulator_cfg_from_dict(raw: Dict[str, Any]) -> Simulator_Config:
         gpio = raw["gpio"]
         sysctl = raw["sysctl"]
         pins = raw["pins"]
-        nvic = raw.get("nvic", {})
+        nvic_raw = raw.get("nvic", {})
 
         cfg = Simulator_Config(
             memory=Memory_Config(**mem),
@@ -129,10 +137,7 @@ def _parse_simulator_cfg_from_dict(raw: Dict[str, Any]) -> Simulator_Config:
                 leds={k: int(v) for k, v in pins["leds"].items()},
                 switches={k: int(v) for k, v in pins["switches"].items()},
             ),
-            nvic=NVIC_Config(
-                irq={k: int(v) for k, v in nvic.get("irq", {}).items()},
-                irq_offset=int(nvic.get("irq_offset", 16)),
-            ),
+            nvic=_build_nvic_cfg(nvic_raw),
         )
     except KeyError as exc:
         raise ConfigurationError(f"Missing required config key: {exc}") from exc

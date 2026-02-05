@@ -150,14 +150,14 @@ GPIO_PORTF_DATA_R = LED_RED | LED_GREEN | LED_BLUE;
 
 ## Troubleshooting
 
-**Q: LEDs don't turn on**
+### Q: LEDs don't turn on
 
 A: Check that:
 - GPIO clock is enabled (`SYSCTL_RCGCGPIO_R`)
 - Pins are configured as outputs (`GPIO_PORTF_DIR_R`)
 - Digital function is enabled (`GPIO_PORTF_DEN_R`)
 
-**Q: Code doesn't execute**
+### Q: Code doesn't execute
 
 A: Verify:
 - Firmware compiled without errors

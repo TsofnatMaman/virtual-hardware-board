@@ -419,62 +419,18 @@ class TestParseSimulatorCfgFromDict:
 class TestLoadConfig:
     """Test load_config function."""
 
-    def test_load_config_success(self):
+    def test_load_config_success(
+        self, temp_yaml_file, minimal_simulator_config_dict
+    ):
         """Test successfully loading configuration."""
-        yaml_content = {
-            "memory": {
-                "flash_base": 0x08000000,
-                "flash_size": 524288,
-                "sram_base": 0x20000000,
-                "sram_size": 131072,
-                "periph_base": 0x40000000,
-                "periph_size": 0x00100000,
-                "bitband_base": 0x42000000,
-                "bitband_size": 0x02000000,
-            },
-            "util": {
-                "mask_32bit": 0xFFFFFFFF,
-                "mask_8bit": 0xFF,
-            },
-            "gpio": {
-                "ports": {"A": 0x40004000},
-                "offsets": {
-                    "data": 0x000,
-                    "dir": 0x400,
-                    "den": 0x51C,
-                    "lock": 0x520,
-                    "cr": 0x524,
-                    "icr": 0x41C,
-                },
-            },
-            "sysctl": {
-                "base": 0x400FE000,
-                "registers": {"rcgcgpio": 0x608},
-            },
-            "pins": {
-                "pin_masks": {"PIN0": 0x01},
-                "leds": {"LED1": 0x01},
-                "switches": {"SW1": 0x01},
-            },
-        }
+        with temp_yaml_file.open("w", encoding="utf-8") as fh:
+            yaml.dump(minimal_simulator_config_dict, fh)
 
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            suffix=".yaml",
-            delete=False,
-        ) as f:
-            yaml.dump(yaml_content, f)
-            f.flush()
-            path = f.name
+        cfg = load_config("test_board", path=str(temp_yaml_file))
 
-        try:
-            cfg = load_config("test_board", path=path)
-
-            assert isinstance(cfg, Simulator_Config)
-            assert cfg.memory.flash_base == 0x08000000
-            assert cfg.util.mask_32bit == 0xFFFFFFFF
-        finally:
-            Path(path).unlink()
+        assert isinstance(cfg, Simulator_Config)
+        assert cfg.memory.flash_base == 0x08000000
+        assert cfg.util.mask_32bit == 0xFFFFFFFF
 
     def test_load_config_invalid_path(self):
         """Test loading configuration from invalid path."""

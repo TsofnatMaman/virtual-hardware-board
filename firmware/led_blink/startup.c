@@ -1,3 +1,4 @@
+// cppcheck-suppress missingIncludeSystem
 #include <stdint.h>
 
 /* `main` is defined in another file */
