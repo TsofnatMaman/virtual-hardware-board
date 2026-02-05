@@ -1,5 +1,6 @@
 from interfaces.board import BaseBoard
 
+
 class TM4C123_Board(BaseBoard):
     """
     TM4C123 (Tiva C) board implementation.

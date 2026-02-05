@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 from simulator.interfaces.peripheral import BasePeripherals
 
+
 class BaseMemory(ABC):
     """Absract interface for memory-mapped storage and peripherals."""
 
@@ -34,7 +35,7 @@ class BaseMemory(ABC):
     @abstractmethod
     def peripherals(self) -> dict[int, BasePeripherals]:
         """Get all peripherals mapped in memory.
-        
+
         Returns:
             Dictionary mapping base addresses to peripheral instances
         """

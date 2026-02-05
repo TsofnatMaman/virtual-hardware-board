@@ -7,6 +7,7 @@ from typing import Any, Optional
 
 from simulator.interfaces.memory import BaseMemory
 
+
 class BaseBoard(ABC):
     """Abstract interface for simulated embedded boards.
 
@@ -26,7 +27,7 @@ class BaseBoard(ABC):
 
     def __init__(self, config: Any | None = None, **_kwargs: Any) -> None:
         self.config = config
-    
+
     # ====== Core API (Required) ======
 
     @property
@@ -52,14 +53,14 @@ class BaseBoard(ABC):
             IRQ number if interrupt pending, None otherwise
         """
         ...
-    
+
     @abstractmethod
     def clear_pending_interrupt(self) -> None:
         """Clear the current pending interrupt."""
         ...
 
     # ====== Optional API (Extensible) ======
-    
+
     def gui_state(self) -> dict[str, Any]:
         """Get board state for GUI or headless display.
 
@@ -69,16 +70,16 @@ class BaseBoard(ABC):
             Dictionary with board state (LEDs, buttons, etc.)
         """
         return {}
-    
+
     def get_name(self) -> str:
         """Get board name for display.
-        
+
         Returns:
             Human-readable board name
         """
 
         return "Unknown"
-    
+
     # ====== Convenience Properties ======
     @property
     def has_pending_interrupt(self) -> bool:

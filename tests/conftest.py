@@ -15,19 +15,20 @@ import tempfile
 import yaml
 from pathlib import Path
 
+
 @pytest.fixture
 def temp_yaml_file():
     """
     Fixture that provides a temporary YAML file.
-    
+
     Yields:
         Path: Path to the temporary YAML file
     """
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
         temp_path = Path(f.name)
-    
+
     yield temp_path
-    
+
     # Cleanup
     if temp_path.exists():
         temp_path.unlink()
@@ -37,7 +38,7 @@ def temp_yaml_file():
 def valid_simulator_config_dict():
     """
     Fixture providing a complete valid simulator configuration dictionary.
-    
+
     Returns:
         dict: A complete configuration for the Simulator_Config
     """
@@ -119,17 +120,17 @@ def valid_simulator_config_dict():
 def temp_config_yaml_file(temp_yaml_file, valid_simulator_config_dict):
     """
     Fixture that creates a temporary YAML file with valid configuration.
-    
+
     Args:
         temp_yaml_file: Path object for temporary file
         valid_simulator_config_dict: Valid configuration dictionary
-    
+
     Yields:
         Path: Path to the temporary YAML file with valid configuration
     """
     with open(temp_yaml_file, "w", encoding="utf-8") as f:
         yaml.dump(valid_simulator_config_dict, f)
-    
+
     yield temp_yaml_file
 
 
@@ -137,7 +138,7 @@ def temp_config_yaml_file(temp_yaml_file, valid_simulator_config_dict):
 def minimal_simulator_config_dict():
     """
     Fixture providing a minimal valid simulator configuration dictionary.
-    
+
     Returns:
         dict: A minimal configuration with only required fields
     """
@@ -182,18 +183,14 @@ def minimal_simulator_config_dict():
 def pytest_configure(config):
     """
     Hook for initial pytest configuration.
-    
+
     Used to add custom markers and configuration.
     """
     config.addinivalue_line(
         "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
     )
-    config.addinivalue_line(
-        "markers", "integration: marks tests as integration tests"
-    )
-    config.addinivalue_line(
-        "markers", "unit: marks tests as unit tests"
-    )
+    config.addinivalue_line("markers", "integration: marks tests as integration tests")
+    config.addinivalue_line("markers", "unit: marks tests as unit tests")
 
 
 def pytest_collection_modifyitems(config, items):
