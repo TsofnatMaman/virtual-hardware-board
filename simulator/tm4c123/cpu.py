@@ -6,7 +6,6 @@ from overrides import override  # type: ignore
 
 from simulator.interfaces.cpu import BaseCPU
 from simulator.interfaces.memory import BaseMemory
-from simulator.utils.config_loader import Memory_Config
 
 
 class TM4C123_CPU(BaseCPU):
@@ -45,7 +44,6 @@ class TM4C123_CPU(BaseCPU):
         PSP/MSP to top of SRAM.
         """
         # TODO: Implement CPU reset
-        pass
 
     @override
     def step(self) -> None:
@@ -54,4 +52,3 @@ class TM4C123_CPU(BaseCPU):
         Fetches instruction from PC, decodes, and executes.
         """
         # TODO: Implement instruction fetch/decode/execute cycle
-        pass

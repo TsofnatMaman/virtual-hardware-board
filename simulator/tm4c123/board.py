@@ -1,3 +1,5 @@
+"""TM4C123 board implementation with CPU, memory, and peripherals."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -16,7 +18,7 @@ from .configs import BOARD_NAME
 
 
 class TM4C123_Board(BaseBoard):
-    """TM4C123 (Tiva C) board implementation.
+    """TM4C123 (Tiva C) board container with CPU, memory, and peripherals.
 
     Architecture:
     - Board owns CPU (which masters memory bus) and Peripherals
@@ -41,15 +43,15 @@ class TM4C123_Board(BaseBoard):
 
     def _initialize_peripherals(self) -> None:
         """Initialize all board peripherals and register with memory.
-        
+
         TODO: Create actual peripheral instances (GPIO, UART, Timers, etc.)
         and register them with memory at their mapped addresses.
-        
+
         Example:
             self._peripherals["GPIOA"] = GPIO_Port("GPIOA")
             self._memory.register_peripheral(0x40004000, 0x1000, self._peripherals["GPIOA"])
         """
-        pass
+        # TODO: Implement peripheral initialization
 
     @property
     @override
@@ -84,13 +86,13 @@ class TM4C123_Board(BaseBoard):
     @override
     def reset(self) -> None:
         """Reset board to power-on state.
-        
+
         Resets CPU and all registered peripherals.
         The memory is implicitly reset when CPU resets and peripherals reset.
         """
         self._cpu.reset()
         self._memory.reset()
-        
+
         # Reset all peripherals to power-on state
         for periph in self._peripherals.values():
             periph.reset()

@@ -191,7 +191,7 @@ class CheckRunner:
             ("tests", self.run_tests),
         ]
 
-        for check_name, check_func in checks:
+        for _check_name, check_func in checks:
             check_func()
 
         self.print_summary()

@@ -1,3 +1,5 @@
+"""TM4C123 memory management with FLASH, SRAM, peripherals, and bit-band support."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -14,13 +16,15 @@ from simulator.utils.config_loader import Memory_Config
 
 @dataclass(frozen=True)
 class PeripheralMapping:
+    """Maps peripheral address range to peripheral instance."""
+
     base: int
     size: int
     instance: BasePeripherals
 
 
 class TM4C123_Memory(BaseMemory):
-    """TM4C123 memory map with FLASH, SRAM, peripherals, and bit-band alias regions."""
+    """TM4C123 memory implementation with FLASH, SRAM, peripherals, and bit-band regions."""
 
     def __init__(self, mem_config: Memory_Config) -> None:
         super().__init__(mem_config)
@@ -97,9 +101,9 @@ class TM4C123_Memory(BaseMemory):
         """
         self._sram[:] = bytearray(len(self._sram))
         self._flash[:] = bytearray(len(self._flash))
-    
+
         self._peripherals = {}
-        
+
     # ==========================================================
     # Address classification
     # ==========================================================
