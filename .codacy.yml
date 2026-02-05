@@ -1,0 +1,13 @@
+engines:
+  pylint:
+    enabled: true
+  flake8:
+    enabled: true
+  black:
+    enabled: true
+  mypy:
+    enabled: true
+  isort:
+    enabled: true
+  duplication:
+    enabled: true
