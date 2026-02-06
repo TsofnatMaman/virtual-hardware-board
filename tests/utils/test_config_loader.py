@@ -95,7 +95,14 @@ class TestGPIOOffsets:
             den=0x51C,
             lock=0x520,
             cr=0x524,
+            is_=0x404,
+            ibe=0x408,
+            iev=0x40C,
+            im=0x410,
+            ris=0x414,
+            mis=0x418,
             icr=0x41C,
+            afsel=0x420,
         )
 
         assert offsets.data == 0x000
@@ -103,7 +110,14 @@ class TestGPIOOffsets:
         assert offsets.den == 0x51C
         assert offsets.lock == 0x520
         assert offsets.cr == 0x524
+        assert offsets.is_ == 0x404
+        assert offsets.ibe == 0x408
+        assert offsets.iev == 0x40C
+        assert offsets.im == 0x410
+        assert offsets.ris == 0x414
+        assert offsets.mis == 0x418
         assert offsets.icr == 0x41C
+        assert offsets.afsel == 0x420
 
     def test_gpio_offsets_immutable(self):
         """Test that GPIO_Offsets is frozen."""
@@ -113,7 +127,14 @@ class TestGPIOOffsets:
             den=0x51C,
             lock=0x520,
             cr=0x524,
+            is_=0x404,
+            ibe=0x408,
+            iev=0x40C,
+            im=0x410,
+            ris=0x414,
+            mis=0x418,
             icr=0x41C,
+            afsel=0x420,
         )
 
         with pytest.raises(AttributeError):
@@ -131,7 +152,14 @@ class TestGPIOConfig:
             den=0x51C,
             lock=0x520,
             cr=0x524,
+            is_=0x404,
+            ibe=0x408,
+            iev=0x40C,
+            im=0x410,
+            ris=0x414,
+            mis=0x418,
             icr=0x41C,
+            afsel=0x420,
         )
         ports = {
             "A": 0x40004000,
@@ -310,7 +338,14 @@ class TestParseSimulatorCfgFromDict:
                     "den": 0x51C,
                     "lock": 0x520,
                     "cr": 0x524,
+                    "is": 0x404,
+                    "ibe": 0x408,
+                    "iev": 0x40C,
+                    "im": 0x410,
+                    "ris": 0x414,
+                    "mis": 0x418,
                     "icr": 0x41C,
+                    "afsel": 0x420,
                 },
             },
             "sysctl": {

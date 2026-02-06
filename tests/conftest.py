@@ -65,7 +65,14 @@ GPIO_OFFSETS = {
     "den": 0x51C,
     "lock": 0x520,
     "cr": 0x524,
+    "is": 0x404,
+    "ibe": 0x408,
+    "iev": 0x40C,
+    "im": 0x410,
+    "ris": 0x414,
+    "mis": 0x418,
     "icr": 0x41C,
+    "afsel": 0x420,
 }
 
 SYSCTL_CFG = {
@@ -98,6 +105,79 @@ PINS_CFG = {
 }
 
 NVIC_CFG = {"irq": {"timer": 19, "gpio": 0}, "irq_offset": 16}
+
+# STM32 Configuration
+STM32_GPIO_PORTS = {
+    "A": 0x40020000,
+    "B": 0x40020400,
+    "C": 0x40020800,
+    "D": 0x40020C00,
+    "E": 0x40021000,
+    "F": 0x40021400,
+    "G": 0x40021800,
+}
+
+STM32_GPIO_OFFSETS = {
+    "data": 0x00,
+    "dir": 0x04,
+    "den": 0x08,
+    "lock": 0x1C,
+    "cr": 0x14,
+    "is": 0x28,
+    "ibe": 0x30,
+    "iev": 0x34,
+    "im": 0x38,
+    "ris": 0x3C,
+    "mis": 0x40,
+    "icr": 0x44,
+    "afsel": 0x20,
+}
+
+STM32_PINS = {
+    "pin_masks": {
+        "PIN0": 0x0001,
+        "PIN1": 0x0002,
+        "PIN2": 0x0004,
+        "PIN3": 0x0008,
+        "PIN4": 0x0010,
+        "PIN5": 0x0020,
+        "PIN6": 0x0040,
+        "PIN7": 0x0080,
+        "PIN8": 0x0100,
+        "PIN9": 0x0200,
+        "PIN10": 0x0400,
+        "PIN11": 0x0800,
+        "PIN12": 0x1000,
+        "PIN13": 0x2000,
+        "PIN14": 0x4000,
+        "PIN15": 0x8000,
+    },
+    "leds": {"RED": 0x0001, "GREEN": 0x0002, "BLUE": 0x0004},
+    "switches": {"BTN_USER": 0x0001},
+}
+
+STM32_SYSCTL = {
+    "base": 0x40023800,
+    "registers": {
+        "rcc_ahb1enr": 0x30,
+        "rcc_apb2enr": 0x44,
+        "rcc_apb1enr": 0x40,
+        "rcc_cfgr": 0x04,
+    },
+}
+
+STM32_NVIC = {
+    "irq": {
+        "GPIO_EXTI0": 6,
+        "GPIO_EXTI1": 7,
+        "GPIO_EXTI2": 8,
+        "GPIO_EXTI3": 9,
+        "GPIO_EXTI4": 10,
+        "GPIO_EXTI5_9": 23,
+        "GPIO_EXTI10_15": 40,
+    },
+    "irq_offset": 16,
+}
 
 
 @pytest.fixture
@@ -164,7 +244,14 @@ def minimal_simulator_config_dict():
                 "den": 0x51C,
                 "lock": 0x520,
                 "cr": 0x524,
+                "is": 0x404,
+                "ibe": 0x408,
+                "iev": 0x40C,
+                "im": 0x410,
+                "ris": 0x414,
+                "mis": 0x418,
                 "icr": 0x41C,
+                "afsel": 0x420,
             },
         },
         "sysctl": {
@@ -176,6 +263,30 @@ def minimal_simulator_config_dict():
             "leds": {"LED1": 0x01},
             "switches": {"SW1": 0x01},
         },
+    }
+
+
+@pytest.fixture
+def valid_stm32_config_dict():
+    """
+    Fixture providing a complete valid STM32 simulator configuration dictionary.
+    """
+    return {
+        "memory": {
+            "flash_base": 0x08000000,
+            "flash_size": 1048576,
+            "sram_base": 0x20000000,
+            "sram_size": 192000,
+            "periph_base": 0x40000000,
+            "periph_size": 0x00100000,
+            "bitband_base": 0x42000000,
+            "bitband_size": 0x02000000,
+        },
+        "util": UTIL_CFG,
+        "gpio": {"ports": STM32_GPIO_PORTS, "offsets": STM32_GPIO_OFFSETS},
+        "sysctl": STM32_SYSCTL,
+        "pins": STM32_PINS,
+        "nvic": STM32_NVIC,
     }
 
 

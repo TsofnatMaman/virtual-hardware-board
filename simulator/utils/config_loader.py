@@ -37,7 +37,14 @@ class GPIO_Offsets:
     den: int
     lock: int
     cr: int
+    is_: int
+    ibe: int
+    iev: int
+    im: int
+    ris: int
+    mis: int
     icr: int
+    afsel: int
 
 
 @dataclass(frozen=True)
@@ -87,7 +94,8 @@ def _ensure_yaml_available() -> None:
 
 def _get_config_path(board_name: str, path: Optional[str] = None) -> str:
     if path is None:
-        base = Path(__file__).parent / board_name / "config.yaml"
+        # Config files are in simulator/{board_name}/config.yaml
+        base = Path(__file__).parent.parent / board_name / "config.yaml"
         path = str(base)
 
     return path
@@ -112,6 +120,18 @@ def _build_nvic_cfg(nvic_raw: Dict[str, Any]) -> NVIC_Config:
     )
 
 
+def _build_gpio_offsets_cfg(offsets_raw: Dict[str, Any]) -> GPIO_Offsets:
+    """Convert GPIO offsets section to GPIO_Offsets dataclass.
+    
+    Renames 'is' key to 'is_' since 'is' is a Python keyword.
+    """
+    offsets_dict = {k: int(v) for k, v in offsets_raw.items()}
+    # Handle 'is' keyword by renaming to 'is_'
+    if "is" in offsets_dict:
+        offsets_dict["is_"] = offsets_dict.pop("is")
+    return GPIO_Offsets(**offsets_dict)
+
+
 def _parse_simulator_cfg_from_dict(raw: Dict[str, Any]) -> Simulator_Config:
     try:
         mem = raw["memory"]
@@ -126,7 +146,7 @@ def _parse_simulator_cfg_from_dict(raw: Dict[str, Any]) -> Simulator_Config:
             util=Util_Config(**util),
             gpio=GPIO_Config(
                 ports={k: int(v) for k, v in gpio["ports"].items()},
-                offsets=GPIO_Offsets(**gpio["offsets"]),
+                offsets=_build_gpio_offsets_cfg(gpio["offsets"]),
             ),
             sysctl=SysCtl_Config(
                 base=int(sysctl["base"]),

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from overrides import override  # type: ignore
+from typing import override
 
 from simulator.interfaces.cpu import BaseCPU
 from simulator.interfaces.memory import BaseMemory

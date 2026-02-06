@@ -26,7 +26,15 @@ gpio:
     den: 0x51C
     lock: 0x520
     cr: 0x524
+    is: 0x404
+    ibe: 0x408
+    iev: 0x40C
+    im: 0x410
+    ris: 0x414
+    mis: 0x418
     icr: 0x41C
+    afsel: 0x420
+  num_pins: 8
 
 sysctl:
   base: 0x400FE000
