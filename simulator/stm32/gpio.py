@@ -6,7 +6,7 @@ from simulator.interfaces.gpio import BaseGPIO
 from simulator.utils.config_loader import GPIO_Config
 
 
-class STM32GPIO(BaseGPIO):
+class STM32_GPIO(BaseGPIO):
     """STM32 GPIO peripheral implementation.
 
     Manages GPIO registers for an STM32 microcontroller with 16 pins.

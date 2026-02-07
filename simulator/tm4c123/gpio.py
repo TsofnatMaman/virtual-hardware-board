@@ -1,53 +1,32 @@
-"""TM4C123 GPIO peripheral implementation."""
-
-from typing import override
-
 from simulator.interfaces.gpio import BaseGPIO
-from simulator.utils.config_loader import GPIO_Config
+from simulator.utils.consts import ConstUtils
 
-
-class TM4C123GPIO(BaseGPIO):
-    """TM4C123 GPIO peripheral implementation.
-
-    Manages GPIO registers for a TM4C123 microcontroller with 8 pins.
-
-    Inherits common register operations and pin management from
-    BaseGPIOPeripheral, providing only device-specific implementation
-    of port state operations.
-    """
-
+class TM4C123_GPIO(BaseGPIO):
     NUM_PINS = 8
     MAX_PIN = 7
 
-    def __init__(
-        self, gpio_config: GPIO_Config, initial_value: int = 0x00
-    ) -> None:
-        """Initialize TM4C123 GPIO peripheral with 8 pins.
+    def write_register(self, offset: int, value: int) -> None:
+        if self._gpio_config.offsets.data <= offset <= self._gpio_config.offsets.data + ConstUtils.DATA_MASKED_MAX_OFFSET:
+            mask = (offset - self._gpio_config.offsets.data) >> 2
+            current = self._registers.get(self._gpio_config.offsets.data, 0)
+            self._registers[self._gpio_config.offsets.data] = (current & ~mask) | (value & mask)
+            return
+        if offset == self._gpio_config.offsets.icr:
+            self._interrupt_flags &= ~value
+            return
+        super().write_register(offset, value)
 
-        Args:
-            gpio_config: GPIO configuration with register offsets.
-            initial_value: Initial value for GPIO DATA register (default: 0x00).
-        """
-        super().__init__(gpio_config=gpio_config, initial_value=initial_value)
+    def read_register(self, offset: int) -> int:
+        if self._gpio_config.offsets.data <= offset <= self._gpio_config.offsets.data + ConstUtils.DATA_MASKED_MAX_OFFSET:
+            mask = (offset - self._gpio_config.offsets.data) >> 2
+            return self._registers.get(self._gpio_config.offsets.data, 0) & mask
+        if offset == self._gpio_config.offsets.ris:
+            return self._interrupt_flags & ((1 << self.NUM_PINS) - 1)
+        return super().read_register(offset)
 
-    @override
     def set_port_state(self, value: int) -> None:
-        """Set the state of all 8 pins in the port at once.
-
-        Args:
-            value: Bitmask where each bit represents a pin level.
-                   Only lower 8 bits are used.
-        """
-        value = value & 0xFF
+        value &= 0xFF
         self.write_register(self._gpio_config.offsets.data, value)
 
-    @override
     def get_port_state(self) -> int:
-        """Read the current state of all 8 pins in the port.
-
-        Returns:
-            Bitmask where each bit represents a pin level (8 bits).
-        """
-        return self.read_register(self._gpio_config.offsets.data) & 0xFF
-
-
+        return self.read_register(self._gpio_config.offsets.data) & ConstUtils.MASK_8_BITS

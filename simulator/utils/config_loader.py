@@ -5,7 +5,7 @@
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import yaml  # type: ignore[import-untyped]
 
@@ -49,26 +49,26 @@ class GPIO_Offsets:
 
 @dataclass(frozen=True)
 class GPIO_Config:
-    ports: Dict[str, int]
+    ports: dict[str, int]
     offsets: GPIO_Offsets
 
 
 @dataclass(frozen=True)
 class SysCtl_Config:
     base: int
-    registers: Dict[str, int]
+    registers: dict[str, int]
 
 
 @dataclass(frozen=True)
 class Pins_Config:
-    pin_masks: Dict[str, int]
-    leds: Dict[str, int]
-    switches: Dict[str, int] = field(default_factory=dict)
+    pin_masks: dict[str, int]
+    leds: dict[str, int]
+    switches: dict[str, int] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
 class NVIC_Config:
-    irq: Dict[str, int]
+    irq: dict[str, int]
     irq_offset: int
 
 
@@ -101,7 +101,7 @@ def _get_config_path(board_name: str, path: Optional[str] = None) -> str:
     return path
 
 
-def _load_yaml_file(path: Path) -> Dict[str, Any]:
+def _load_yaml_file(path: Path) -> dict[str, Any]:
     _ensure_yaml_available()
     try:
         with path.open("r", encoding="utf-8") as fh:
@@ -112,7 +112,7 @@ def _load_yaml_file(path: Path) -> Dict[str, Any]:
     return raw
 
 
-def _build_nvic_cfg(nvic_raw: Dict[str, Any]) -> NVIC_Config:
+def _build_nvic_cfg(nvic_raw: dict[str, Any]) -> NVIC_Config:
     """Convert NVIC section to NVIC_Config with defaults."""
     return NVIC_Config(
         irq={k: int(v) for k, v in nvic_raw.get("irq", {}).items()},
@@ -120,7 +120,7 @@ def _build_nvic_cfg(nvic_raw: Dict[str, Any]) -> NVIC_Config:
     )
 
 
-def _build_gpio_offsets_cfg(offsets_raw: Dict[str, Any]) -> GPIO_Offsets:
+def _build_gpio_offsets_cfg(offsets_raw: dict[str, Any]) -> GPIO_Offsets:
     """Convert GPIO offsets section to GPIO_Offsets dataclass.
     
     Renames 'is' key to 'is_' since 'is' is a Python keyword.
@@ -132,7 +132,7 @@ def _build_gpio_offsets_cfg(offsets_raw: Dict[str, Any]) -> GPIO_Offsets:
     return GPIO_Offsets(**offsets_dict)
 
 
-def _parse_simulator_cfg_from_dict(raw: Dict[str, Any]) -> Simulator_Config:
+def _parse_simulator_cfg_from_dict(raw: dict[str, Any]) -> Simulator_Config:
     try:
         mem = raw["memory"]
         util = raw["util"]
