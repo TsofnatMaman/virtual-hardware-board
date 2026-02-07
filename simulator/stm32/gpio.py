@@ -58,3 +58,46 @@ class STM32_GPIO(BaseGPIO):
         """
         return self.read_register(self._gpio_config.offsets.data) & ConstUtils.MASK_16_BITS
 
+    @override
+    def read_register(self, offset: int) -> int:
+        """Read from an STM32 GPIO register.
+        
+        Handles special case for Masked Interrupt Status (MIS) register.
+        
+        Args:
+            offset: Register offset in bytes.
+        
+        Returns:
+            Register value.
+        """
+        # Check if this is the MIS register (if it exists in config)
+        if hasattr(self._gpio_config.offsets, 'mis') and offset == self._gpio_config.offsets.mis:
+            im_value = self._registers.get(self._gpio_config.offsets.im, 0)
+            return self._interrupt_flags & im_value
+
+        # All other registers
+        return super().read_register(offset)
+
+    @override
+    def configure_interrupt(self, pin: int, edge_triggered: bool = True) -> None:
+        """Configure interrupt for a specific pin on STM32.
+        
+        Calls base implementation and also updates the IM (Interrupt Mask) register.
+        
+        Args:
+            pin: Pin index (0 to 15).
+            edge_triggered: True for edge-triggered, False for level-triggered.
+        
+        Raises:
+            ValueError: If pin is out of range.
+        """
+        if not (0 <= pin < self.NUM_PINS):
+            raise ValueError(f"Pin {pin} out of range [0, {self.NUM_PINS-1}]")
+        
+        # Call base implementation to update interrupt config
+        super().configure_interrupt(pin, edge_triggered)
+        
+        # Update IM register to enable interrupt for this pin
+        im_value = self._registers.get(self._gpio_config.offsets.im, 0)
+        im_value |= (1 << pin)
+        self._registers[self._gpio_config.offsets.im] = im_value & ConstUtils.MASK_16_BITS

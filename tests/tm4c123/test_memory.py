@@ -22,13 +22,6 @@ class MockPeripheral(BasePeripherals):
     def read_register(self, offset: int) -> int:
         return self.registers.get(offset, 0)
 
-    def write_data_masked(self, offset: int, value: int, mask: int) -> None:
-        current = self.read_register(offset)
-        self.registers[offset] = (current & ~mask) | (value & mask)
-
-    def read_data_masked(self, offset: int, mask: int) -> int:
-        return self.read_register(offset) & mask
-
     def reset(self) -> None:
         self.registers.clear()
 

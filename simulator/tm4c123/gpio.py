@@ -3,6 +3,7 @@
 from typing import override
 
 from simulator.interfaces.gpio import BaseGPIO
+from simulator.interfaces.gpio_enums import PinMode
 from simulator.utils.config_loader import GPIO_Config
 from simulator.utils.consts import ConstUtils
 
@@ -42,18 +43,19 @@ class TM4C123_GPIO(BaseGPIO):
         """Write to a TM4C123 GPIO register.
         
         Implements Tiva-C masked DATA register behavior:
-        - Addresses from (DATA + 0x000) to (DATA + 0x3FC) perform masked writes
+        - Direct writes to the DATA register (exact offset match) bypass masking
+        - Addresses from (DATA + 0x004) to (DATA + 0x3FC) perform masked writes
         - The offset difference >> 2 becomes the write mask
         - Interrupt status register (ICR) handles interrupt flag clearing
+        - Other registers like DIR and AFSEL control pin modes
         
         Args:
             offset: Register offset in bytes.
             value: Value to write.
         """
-        # Masked DATA register access
+        # Masked DATA register access (only for offset > data base, not equal)
         if (
-            self._gpio_config.offsets.data
-            <= offset
+            self._gpio_config.offsets.data < offset
             <= self._gpio_config.offsets.data + ConstUtils.DATA_MASKED_MAX_OFFSET
         ):
             # Calculate the mask from the offset
@@ -69,6 +71,39 @@ class TM4C123_GPIO(BaseGPIO):
             self._interrupt_flags &= ~value
             return
 
+        # Direction register - controls pin modes (OUTPUT when set)
+        if offset == self._gpio_config.offsets.dir:
+            for pin in range(self.NUM_PINS):
+                if value & (1 << pin):
+                    self._pin_modes[pin] = PinMode.OUTPUT
+                elif not (self._registers.get(self._gpio_config.offsets.afsel, 0) & (1 << pin)):
+                    self._pin_modes[pin] = PinMode.INPUT
+            self._registers[offset] = value & ConstUtils.MASK_8_BITS
+            return
+
+        # Alternate Function Select register - controls pin modes (ALTERNATE when set)
+        if offset == self._gpio_config.offsets.afsel:
+            for pin in range(self.NUM_PINS):
+                if value & (1 << pin):
+                    self._pin_modes[pin] = PinMode.ALTERNATE
+                elif not (self._registers.get(self._gpio_config.offsets.dir, 0) & (1 << pin)):
+                    self._pin_modes[pin] = PinMode.INPUT
+            self._registers[offset] = value & ConstUtils.MASK_8_BITS
+            return
+
+        # Interrupt Sense register (IS) - controls edge vs level triggered
+        if offset == self._gpio_config.offsets.is_:
+            for pin in range(self.NUM_PINS):
+                edge_triggered = not (value & (1 << pin))
+                self._interrupt_config[pin]["edge_triggered"] = edge_triggered
+            self._registers[offset] = value & ConstUtils.MASK_8_BITS
+            return
+
+        # Interrupt Mask register (IM)
+        if offset == self._gpio_config.offsets.im:
+            self._registers[offset] = value & ConstUtils.MASK_8_BITS
+            return
+
         # All other registers
         super().write_register(offset, value)
 
@@ -77,9 +112,11 @@ class TM4C123_GPIO(BaseGPIO):
         """Read from a TM4C123 GPIO register.
         
         Implements Tiva-C masked DATA register behavior:
-        - Addresses from (DATA + 0x000) to (DATA + 0x3FC) perform masked reads
+        - Direct reads from DATA register return full 8-bit value
+        - Addresses from (DATA + 0x004) to (DATA + 0x3FC) perform masked reads
         - Returns only the masked bits of the DATA register
         - Raw Interrupt Status (RIS) returns current interrupt flags
+        - Masked Interrupt Status (MIS) applies interrupt mask
         
         Args:
             offset: Register offset in bytes.
@@ -87,18 +124,26 @@ class TM4C123_GPIO(BaseGPIO):
         Returns:
             Register value.
         """
-        # Masked DATA register access
+        # Direct DATA register read (return full value)
+        if offset == self._gpio_config.offsets.data:
+            return self._registers.get(offset, self._initial_value)
+
+        # Masked DATA register access (only for offset > data base)
         if (
-            self._gpio_config.offsets.data
-            <= offset
+            self._gpio_config.offsets.data < offset
             <= self._gpio_config.offsets.data + ConstUtils.DATA_MASKED_MAX_OFFSET
         ):
             mask = (offset - self._gpio_config.offsets.data) >> 2
-            return self._registers.get(self._gpio_config.offsets.data, 0) & mask
+            return self._registers.get(self._gpio_config.offsets.data, self._initial_value) & mask
 
         # Raw Interrupt Status Register (RIS)
         if offset == self._gpio_config.offsets.ris:
             return self._interrupt_flags & ((1 << self.NUM_PINS) - 1)
+
+        # Masked Interrupt Status Register (MIS)
+        if offset == self._gpio_config.offsets.mis:
+            im_value = self._registers.get(self._gpio_config.offsets.im, 0)
+            return self._interrupt_flags & im_value
 
         # All other registers
         return super().read_register(offset)
@@ -122,3 +167,76 @@ class TM4C123_GPIO(BaseGPIO):
             Bitmask where each bit represents the current pin level (8 bits).
         """
         return self.read_register(self._gpio_config.offsets.data) & ConstUtils.MASK_8_BITS
+
+    @override
+    def set_pin_mode(self, pin: int, mode: int) -> None:
+        """Set the mode (direction) of a specific pin for TM4C123.
+        
+        Updates DIR register for OUTPUT mode and AFSEL register for ALTERNATE mode.
+        
+        Args:
+            pin: Pin index (0 to 7).
+            mode: Pin mode from PinMode enum (INPUT, OUTPUT, ALTERNATE).
+        
+        Raises:
+            ValueError: If pin is out of range.
+        """
+        if not (0 <= pin < self.NUM_PINS):
+            raise ValueError(f"Pin {pin} out of range [0, {self.NUM_PINS-1}]")
+        
+        super().set_pin_mode(pin, mode)
+        
+        # Update DIR register for OUTPUT mode
+        dir_value = self._registers.get(self._gpio_config.offsets.dir, 0)
+        # Update AFSEL register for ALTERNATE mode
+        afsel_value = self._registers.get(self._gpio_config.offsets.afsel, 0)
+        
+        pin_mask = 1 << pin
+        if mode == PinMode.OUTPUT:
+            # Set DIR bit, clear AFSEL bit
+            dir_value |= pin_mask
+            afsel_value &= ~pin_mask
+        elif mode == PinMode.ALTERNATE:
+            # Set AFSEL bit, clear DIR bit
+            afsel_value |= pin_mask
+            dir_value &= ~pin_mask
+        else:  # INPUT
+            # Clear both DIR and AFSEL bits
+            dir_value &= ~pin_mask
+            afsel_value &= ~pin_mask
+        
+        self._registers[self._gpio_config.offsets.dir] = dir_value & ConstUtils.MASK_8_BITS
+        self._registers[self._gpio_config.offsets.afsel] = afsel_value & ConstUtils.MASK_8_BITS
+
+    @override
+    def configure_interrupt(self, pin: int, edge_triggered: bool = True) -> None:
+        """Configure interrupt for a specific pin on TM4C123.
+        
+        Updates IS register (0 for edge-triggered, 1 for level-triggered)
+        and IM register to enable interrupt mask.
+        
+        Args:
+            pin: Pin index (0 to 7).
+            edge_triggered: True for edge-triggered, False for level-triggered.
+        
+        Raises:
+            ValueError: If pin is out of range.
+        """
+        if not (0 <= pin < self.NUM_PINS):
+            raise ValueError(f"Pin {pin} out of range [0, {self.NUM_PINS-1}]")
+        
+        super().configure_interrupt(pin, edge_triggered)
+        
+        # Update IS register
+        is_value = self._registers.get(self._gpio_config.offsets.is_, 0)
+        pin_mask = 1 << pin
+        if edge_triggered:
+            is_value &= ~pin_mask
+        else:
+            is_value |= pin_mask
+        self._registers[self._gpio_config.offsets.is_] = is_value & ConstUtils.MASK_8_BITS
+        
+        # Update IM register to enable interrupt
+        im_value = self._registers.get(self._gpio_config.offsets.im, 0)
+        im_value |= pin_mask
+        self._registers[self._gpio_config.offsets.im] = im_value & ConstUtils.MASK_8_BITS

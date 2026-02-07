@@ -113,3 +113,96 @@ class BaseGPIO(BasePeripherals, ABC):
             i: {"edge_triggered": False} for i in range(self.NUM_PINS)
         }
 
+    def set_pin_mode(self, pin: int, mode: int) -> None:
+        """Set the mode (direction/function) of a specific pin.
+        
+        Args:
+            pin: Pin index (0 to NUM_PINS-1).
+            mode: Pin mode from PinMode enum (INPUT, OUTPUT, ALTERNATE).
+        
+        Raises:
+            ValueError: If pin is out of range.
+        """
+        if not (0 <= pin < self.NUM_PINS):
+            raise ValueError(f"Pin {pin} out of range [0, {self.NUM_PINS-1}]")
+        self._pin_modes[pin] = mode
+
+    def get_pin_mode(self, pin: int) -> int:
+        """Get the mode (direction/function) of a specific pin.
+        
+        Args:
+            pin: Pin index (0 to NUM_PINS-1).
+        
+        Returns:
+            Pin mode from PinMode enum.
+        
+        Raises:
+            ValueError: If pin is out of range.
+        """
+        if not (0 <= pin < self.NUM_PINS):
+            raise ValueError(f"Pin {pin} out of range [0, {self.NUM_PINS-1}]")
+        return self._pin_modes[pin]
+
+    def set_pin_value(self, pin: int, level: int) -> None:
+        """Set the value (HIGH/LOW) of a specific pin.
+        
+        Args:
+            pin: Pin index (0 to NUM_PINS-1).
+            level: Pin level from PinLevel enum (LOW=0 or HIGH=1).
+        
+        Raises:
+            ValueError: If pin is out of range.
+        """
+        if not (0 <= pin < self.NUM_PINS):
+            raise ValueError(f"Pin {pin} out of range [0, {self.NUM_PINS-1}]")
+        current_state = self.get_port_state()
+        if level:
+            current_state |= (1 << pin)
+        else:
+            current_state &= ~(1 << pin)
+        self.set_port_state(current_state)
+
+    def get_pin_value(self, pin: int) -> int:
+        """Get the value (HIGH/LOW) of a specific pin.
+        
+        Args:
+            pin: Pin index (0 to NUM_PINS-1).
+        
+        Returns:
+            Pin level (0 for LOW, 1 for HIGH).
+        
+        Raises:
+            ValueError: If pin is out of range.
+        """
+        if not (0 <= pin < self.NUM_PINS):
+            raise ValueError(f"Pin {pin} out of range [0, {self.NUM_PINS-1}]")
+        port_state = self.get_port_state()
+        return (port_state >> pin) & 1
+
+    def configure_interrupt(self, pin: int, edge_triggered: bool = True) -> None:
+        """Configure interrupt for a specific pin.
+        
+        Args:
+            pin: Pin index (0 to NUM_PINS-1).
+            edge_triggered: True for edge-triggered, False for level-triggered.
+        
+        Raises:
+            ValueError: If pin is out of range.
+        """
+        if not (0 <= pin < self.NUM_PINS):
+            raise ValueError(f"Pin {pin} out of range [0, {self.NUM_PINS-1}]")
+        self._interrupt_config[pin]["edge_triggered"] = edge_triggered
+
+    def clear_interrupt_flag(self, pin: int) -> None:
+        """Clear the interrupt flag for a specific pin.
+        
+        Args:
+            pin: Pin index (0 to NUM_PINS-1).
+        
+        Raises:
+            ValueError: If pin is out of range.
+        """
+        if not (0 <= pin < self.NUM_PINS):
+            raise ValueError(f"Pin {pin} out of range [0, {self.NUM_PINS-1}]")
+        self._interrupt_flags &= ~(1 << pin)
+
