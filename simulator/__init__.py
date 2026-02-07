@@ -11,7 +11,8 @@ Architecture:
   └─ STM32GPIO: 16-pin device-specific implementation
 """
 
-from simulator.stm32 import STM32GPIO
-from simulator.tm4c123.gpio import TM4C123GPIO
+from simulator.stm32.gpio import STM32_GPIO
+from simulator.tm4c123.gpio import TM4C123_GPIO
 
 __all__ = ["TM4C123GPIO", "STM32GPIO"]
+
