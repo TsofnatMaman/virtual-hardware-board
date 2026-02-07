@@ -487,9 +487,11 @@ class TestMemoryReset:
         # Reset
         memory.reset()
 
-        # Verify peripherals dict is empty
-        assert len(memory._peripherals) == 0
-        assert memory._peripherals == {}
+        # New behavior: Memory.reset() no longer unregisters peripherals;
+        # peripheral lifecycle is managed by the board. Verify peripherals
+        # remain registered and memory cleared SRAM instead.
+        assert len(memory._peripherals) == 2
+        assert memory._peripherals != {}
 
     def test_reset_calls_peripheral_reset(self, memory):
         """Test that registered peripherals are reset during memory reset."""
@@ -500,9 +502,11 @@ class TestMemoryReset:
 
         memory.reset()
 
-        # Even though peripherals dict is cleared, peripheral reset is called
-        # before clearing (if implementation does that)
-        assert memory._peripherals == {}
+        # New behavior: Memory.reset() does not call peripheral.reset() and
+        # does not clear the peripherals dict. The board is responsible for
+        # invoking peripheral.reset() when appropriate.
+        assert not mock_periph.reset.called
+        assert 0x40000000 in memory._peripherals
 
     def test_reset_multiple_times_idempotent(self, memory):
         """Test that multiple resets produce consistent results."""

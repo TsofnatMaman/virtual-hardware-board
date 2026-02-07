@@ -44,7 +44,7 @@ class TM4C123_GPIO(BaseGPIO):
         super().__init__(gpio_config=gpio_config, initial_value=initial_value)
 
     @override
-    def write_register(self, offset: int, value: int) -> None:
+    def write(self, offset: int, size: int, value: int) -> None:
         """Write to a TM4C123 GPIO register.
         
         Implements Tiva-C masked DATA register behavior:
@@ -64,8 +64,11 @@ class TM4C123_GPIO(BaseGPIO):
             self._gpio_config.offsets.data < offset
             <= self._gpio_config.offsets.data + ConstUtils.DATA_MASKED_MAX_OFFSET
         ):
-            # Calculate the mask from the offset
+            # Calculate the mask from the offset (mask is derived from address bits)
             mask = (offset - self._gpio_config.offsets.data) >> 2
+            # We expect 32-bit writes for masked DATA areas; ensure size is 4
+            if size != 4:
+                raise ValueError("masked DATA writes must be 4 bytes")
             current = self._registers.get(self._gpio_config.offsets.data, 0)
             self._registers[self._gpio_config.offsets.data] = (current & ~mask) | (
                 value & mask
@@ -74,12 +77,18 @@ class TM4C123_GPIO(BaseGPIO):
 
         # Interrupt Clear Register (ICR)
         if offset == self._gpio_config.offsets.icr:
+            # ICR is written with a mask of bits to clear
+            if size != 4:
+                raise ValueError("ICR writes must be 4 bytes")
             self._interrupt_flags &= ~value
             return
 
         # Direction register - controls pin modes (OUTPUT when set)
         # Update _pin_modes array based on DIR and AFSEL values
         if offset == self._gpio_config.offsets.dir:
+            # DIR is an 8-bit register
+            if size not in (1, 4):
+                raise ValueError("DIR writes must be 1 or 4 bytes")
             value &= ConstUtils.MASK_8_BITS
             afsel = self._registers.get(self._gpio_config.offsets.afsel, 0)
             for pin in range(self.NUM_PINS):
@@ -93,6 +102,8 @@ class TM4C123_GPIO(BaseGPIO):
         # Alternate Function Select register - controls pin modes (ALTERNATE when set)
         # Update _pin_modes array based on AFSEL and DIR values
         if offset == self._gpio_config.offsets.afsel:
+            if size not in (1, 4):
+                raise ValueError("AFSEL writes must be 1 or 4 bytes")
             value &= ConstUtils.MASK_8_BITS
             dir_val = self._registers.get(self._gpio_config.offsets.dir, 0)
             for pin in range(self.NUM_PINS):
@@ -106,6 +117,8 @@ class TM4C123_GPIO(BaseGPIO):
         # Interrupt Sense register (IS) - controls edge vs level triggered
         # Update _interrupt_config dict from BaseGPIO
         if offset == self._gpio_config.offsets.is_:
+            if size not in (1, 4):
+                raise ValueError("IS writes must be 1 or 4 bytes")
             value &= ConstUtils.MASK_8_BITS
             for pin in range(self.NUM_PINS):
                 # IS register: 0 = edge-triggered, 1 = level-triggered
@@ -119,10 +132,10 @@ class TM4C123_GPIO(BaseGPIO):
             return
 
         # All other registers
-        super().write_register(offset, value)
+        super().write(offset, size, value)
 
     @override
-    def read_register(self, offset: int) -> int:
+    def read(self, offset: int, size: int) -> int:
         """Read from a TM4C123 GPIO register.
         
         Implements Tiva-C masked DATA register behavior:
@@ -140,7 +153,7 @@ class TM4C123_GPIO(BaseGPIO):
         """
         # Direct DATA register read (return full value)
         if offset == self._gpio_config.offsets.data:
-            return self._registers.get(offset, self._initial_value)
+            return self._registers.get(offset, self._initial_value) & ((1 << (size * 8)) - 1)
 
         # Masked DATA register access (only for offset > data base)
         if (
@@ -160,7 +173,7 @@ class TM4C123_GPIO(BaseGPIO):
             return self._interrupt_flags & im_value
 
         # All other registers
-        return super().read_register(offset)
+        return super().read(offset, size)
 
     @override
     def set_port_state(self, value: int) -> None:
@@ -171,7 +184,7 @@ class TM4C123_GPIO(BaseGPIO):
                    Only lower 8 bits are used.
         """
         value &= ConstUtils.MASK_8_BITS
-        self.write_register(self._gpio_config.offsets.data, value)
+        self.write(self._gpio_config.offsets.data, 4, value)
 
     @override
     def get_port_state(self) -> int:
@@ -180,7 +193,7 @@ class TM4C123_GPIO(BaseGPIO):
         Returns:
             Bitmask where each bit represents the current pin level (8 bits).
         """
-        return self.read_register(self._gpio_config.offsets.data) & ConstUtils.MASK_8_BITS
+        return self.read(self._gpio_config.offsets.data, 4) & ConstUtils.MASK_8_BITS
 
     @override
     def set_pin_mode(self, pin: int, mode: int) -> None:

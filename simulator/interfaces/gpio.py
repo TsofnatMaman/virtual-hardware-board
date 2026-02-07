@@ -68,35 +68,31 @@ class BaseGPIO(BasePeripherals, ABC):
         raise NotImplementedError
 
     @override
-    def write_register(self, offset: int, value: int) -> None:
-        """Write a 32-bit value to a register.
-        
-        Masks the value to 32 bits and stores in the register dictionary.
-        Subclasses may override to handle special register behavior
-        (e.g., masked DATA access, BSRR/BRR registers).
-        
-        Args:
-            offset: Register offset in bytes.
-            value: 32-bit value to write.
+    def write(self, offset: int, size: int, value: int) -> None:
+        """Write a value to a register or register field.
+
+        Stores register values in a 32-bit backing map. Smaller writes
+        update the low-order bytes. Subclasses may override for special
+        behavior.
         """
-        value &= ConstUtils.MASK_32_BITS
-        self._registers[offset] = value
+        if size not in (1, 2, 4):
+            raise ValueError("unsupported write size")
+        mask = (1 << (size * 8)) - 1
+        current = self._registers.get(offset, self._initial_value)
+        new = (current & ~mask) | (value & mask)
+        self._registers[offset] = new & ConstUtils.MASK_32_BITS
 
     @override
-    def read_register(self, offset: int) -> int:
-        """Read a 32-bit value from a register.
-        
-        Returns the register value, or the initial value if register
-        has not been written yet.
-        Subclasses may override for special register behaviors.
-        
-        Args:
-            offset: Register offset in bytes.
-        
-        Returns:
-            32-bit register value.
+    def read(self, offset: int, size: int) -> int:
+        """Read a value from a register.
+
+        Returns the low-order `size` bytes of the stored 32-bit register
+        value.
         """
-        return self._registers.get(offset, self._initial_value)
+        if size not in (1, 2, 4):
+            raise ValueError("unsupported read size")
+        mask = (1 << (size * 8)) - 1
+        return self._registers.get(offset, self._initial_value) & mask
 
     @override
     def reset(self) -> None:
@@ -205,4 +201,16 @@ class BaseGPIO(BasePeripherals, ABC):
         if not (0 <= pin < self.NUM_PINS):
             raise ValueError(f"Pin {pin} out of range [0, {self.NUM_PINS-1}]")
         self._interrupt_flags &= ~(1 << pin)
+
+    def set_interrupt_flag(self, pin: int) -> None:
+        """Set the interrupt flag for a specific pin."""
+        if not (0 <= pin < self.NUM_PINS):
+            raise ValueError(f"Pin {pin} out of range [0, {self.NUM_PINS-1}]")
+        self._interrupt_flags |= (1 << pin)
+
+    def get_interrupt_flag(self, pin: int) -> bool:
+        """Return True if the interrupt flag for `pin` is set."""
+        if not (0 <= pin < self.NUM_PINS):
+            raise ValueError(f"Pin {pin} out of range [0, {self.NUM_PINS-1}]")
+        return bool((self._interrupt_flags >> pin) & 1)
 

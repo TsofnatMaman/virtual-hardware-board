@@ -1,6 +1,6 @@
 """STM32 GPIO peripheral implementation."""
 
-from typing import override
+from typing import Callable, override
 
 from simulator.interfaces.gpio import BaseGPIO
 from simulator.utils.config_loader import GPIO_Config
@@ -37,6 +37,11 @@ class STM32_GPIO(BaseGPIO):
             initial_value: Initial value for GPIO DATA register. Defaults to 0x0000.
         """
         super().__init__(gpio_config=gpio_config, initial_value=initial_value)
+        
+        # Map offsets to read handlers to avoid if/else chains
+        self._read_handlers: dict[int, Callable[[], int]] = {}
+        if hasattr(self._gpio_config.offsets, 'mis'):
+            self._read_handlers[self._gpio_config.offsets.mis] = self._read_mis
 
     @override
     def set_port_state(self, value: int) -> None:
@@ -47,7 +52,7 @@ class STM32_GPIO(BaseGPIO):
                    Only lower 16 bits are used.
         """
         value = value & ConstUtils.MASK_16_BITS
-        self.write_register(self._gpio_config.offsets.data, value)
+        self.write(self._gpio_config.offsets.data, 4, value)
 
     @override
     def get_port_state(self) -> int:
@@ -56,13 +61,12 @@ class STM32_GPIO(BaseGPIO):
         Returns:
             Bitmask where each bit represents the current pin level (16 bits).
         """
-        return self.read_register(self._gpio_config.offsets.data) & ConstUtils.MASK_16_BITS
+        return self.read(self._gpio_config.offsets.data, 4) & ConstUtils.MASK_16_BITS
 
     @override
     def read_register(self, offset: int) -> int:
         """Read from an STM32 GPIO register.
-        
-        Handles special case for Masked Interrupt Status (MIS) register.
+        Uses handler mapping for special registers (like MIS).
         
         Args:
             offset: Register offset in bytes.
@@ -70,13 +74,15 @@ class STM32_GPIO(BaseGPIO):
         Returns:
             Register value.
         """
-        # Check if this is the MIS register (if it exists in config)
-        if hasattr(self._gpio_config.offsets, 'mis') and offset == self._gpio_config.offsets.mis:
-            im_value = self._registers.get(self._gpio_config.offsets.im, 0)
-            return self._interrupt_flags & im_value
+        if handler := self._read_handlers.get(offset):
+            return handler()
 
-        # All other registers
-        return super().read_register(offset)
+        return super().read(offset, 4)
+
+    def _read_mis(self) -> int:
+        """Handler for Masked Interrupt Status register."""
+        im_value = self._registers.get(self._gpio_config.offsets.im, 0)
+        return self._interrupt_flags & im_value
 
     @override
     def configure_interrupt(self, pin: int, edge_triggered: bool = True) -> None:

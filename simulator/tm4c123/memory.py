@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import bisect
 from dataclasses import dataclass
 from typing import cast, override
 
@@ -35,6 +36,8 @@ class TM4C123_Memory(BaseMemory):
 
         # Peripheral mappings
         self._peripherals: dict[int, PeripheralMapping] = {}
+        self._peripheral_starts: list[int] = []
+        self._last_peripheral_mapping: PeripheralMapping | None = None
 
     # ==========================================================
     # Helpers
@@ -47,6 +50,46 @@ class TM4C123_Memory(BaseMemory):
     # ==========================================================
     # Public API
     # ==========================================================
+
+    def register_peripheral(self, base_address: int, size: int, peripheral: BasePeripherals) -> PeripheralMapping:
+        """Register a peripheral instance to a memory region.
+
+        Args:
+            peripheral: The peripheral instance (e.g., GPIO, UART)
+            base_address: Start address in memory
+            size: Size of the peripheral's address space
+
+        Returns:
+            The created PeripheralMapping object.
+        """
+        # Check for overlapping ranges with existing peripherals
+        if size <= 0:
+            raise ValueError("peripheral size must be positive")
+
+        new_start = base_address
+        new_end = base_address + size
+
+        # Find insertion point
+        idx = bisect.bisect_right(self._peripheral_starts, new_start)
+
+        # Check previous mapping for overlap
+        if idx - 1 >= 0:
+            prev_base = self._peripheral_starts[idx - 1]
+            prev = self._peripherals[prev_base]
+            if prev.base + prev.size > new_start:
+                raise ValueError(f"peripheral range overlaps with existing peripheral at 0x{prev.base:X}")
+
+        # Check next mapping for overlap
+        if idx < len(self._peripheral_starts):
+            next_base = self._peripheral_starts[idx]
+            if new_end > next_base:
+                raise ValueError(f"peripheral range overlaps with existing peripheral at 0x{next_base:X}")
+
+        mapping = PeripheralMapping(base=base_address, size=size, instance=peripheral)
+        self._peripherals[base_address] = mapping
+        bisect.insort(self._peripheral_starts, base_address)
+
+        return mapping
 
     @override
     def read(self, address: int, size: int) -> int:
@@ -63,7 +106,7 @@ class TM4C123_Memory(BaseMemory):
         if self._is_bitband_alias(address):
             return self._read_bitband(address)
         if self._is_peripheral(address):
-            return self._read_peripheral(address)
+            return self._read_peripheral(address, size)
 
         raise MemoryAccessError(address)
 
@@ -87,7 +130,7 @@ class TM4C123_Memory(BaseMemory):
             self._write_bitband(address, value)
             return
         if self._is_peripheral(address):
-            self._write_peripheral(address, value)
+            self._write_peripheral(address, value, size)
             return
 
         raise MemoryAccessError(address)
@@ -99,10 +142,24 @@ class TM4C123_Memory(BaseMemory):
         Clears SRAM (volatile, power-dependent).
         FLASH is left unchanged (persistent, non-volatile).
         """
+        # Only clear SRAM. Do NOT unregister peripherals here; peripheral
+        # lifecycle is managed by the board. Clear only the last-access cache.
         self._sram[:] = bytearray(len(self._sram))
-        self._flash[:] = bytearray(len(self._flash))
+        self._last_peripheral_mapping = None
 
-        self._peripherals = {}
+    @override
+    def read_block(self, address: int, size: int) -> bytes:
+        if self._is_flash(address):
+            cfg = self._get_config()
+            offset = address - cfg.flash_base
+            return bytes(self._flash[offset : offset + size])
+
+        if self._is_sram(address):
+            cfg = self._get_config()
+            offset = address - cfg.sram_base
+            return bytes(self._sram[offset : offset + size])
+
+        return b"\x00" * size
 
     # ==========================================================
     # Address classification
@@ -190,20 +247,43 @@ class TM4C123_Memory(BaseMemory):
     # Peripherals
     # ==========================================================
 
-    def _read_peripheral(self, address: int) -> int:
+    def _read_peripheral(self, address: int, size: int) -> int:
         mapping = self._find_peripheral(address)
         offset = address - mapping.base
-        return mapping.instance.read_register(offset)
+        return mapping.instance.read(offset, size)
 
-    def _write_peripheral(self, address: int, value: int) -> None:
+    def _write_peripheral(self, address: int, value: int, size: int) -> None:
         mapping = self._find_peripheral(address)
         offset = address - mapping.base
-        mapping.instance.write_register(offset, value)
+        mapping.instance.write(offset, size, value)
 
     def _find_peripheral(self, address: int) -> PeripheralMapping:
+        # Check cache (last accessed peripheral)
+        last = self._last_peripheral_mapping
+        if last and last.base <= address < last.base + last.size:
+            return last
+
+        # Optimized lookup using bisect (O(log N))
+        # Find the insertion point for address in the sorted starts list
+        # If we have a starts index list, use bisect for fast lookup
+        if self._peripheral_starts:
+            idx = bisect.bisect_right(self._peripheral_starts, address) - 1
+            if idx >= 0:
+                base = self._peripheral_starts[idx]
+                mapping = self._peripherals[base]
+                if address < base + mapping.size:
+                    # Update cache
+                    self._last_peripheral_mapping = mapping
+                    return mapping
+
+        # Fallback: tests and some code may populate _peripherals dict
+        # directly without maintaining _peripheral_starts. Scan dict as
+        # a fallback (O(N)). Update cache if found.
         for mapping in self._peripherals.values():
             if mapping.base <= address < mapping.base + mapping.size:
+                self._last_peripheral_mapping = mapping
                 return mapping
+
         raise MemoryAccessError(address)
 
     # ==========================================================
@@ -230,13 +310,34 @@ class TM4C123_Memory(BaseMemory):
 
     def _bitband_to_underlying(self, address: int) -> int:
         cfg = self._get_config()
-        offset = address - cfg.bitband_base
-        return cfg.sram_base + (offset // 4) * 4
+        if address < cfg.bitband_base or address >= cfg.bitband_base + cfg.bitband_size:
+            raise MemoryAccessError(address)
+
+        # Compute bit-word offset and then underlying byte offset
+        bit_word_offset = (address - cfg.bitband_base) // 4
+        underlying_byte_offset = bit_word_offset // 32
+
+        # Candidate underlying addresses for SRAM and Peripherals
+        sram_candidate = cfg.sram_base + underlying_byte_offset
+        periph_candidate = cfg.periph_base + underlying_byte_offset
+
+        # Prefer SRAM if candidate falls within SRAM region
+        if self._in_region(sram_candidate, cfg.sram_base, cfg.sram_size):
+            return sram_candidate
+
+        # Otherwise, if within peripheral region, use peripheral base
+        if self._in_region(periph_candidate, cfg.periph_base, cfg.periph_size):
+            return periph_candidate
+
+        # Not a valid underlying address
+        raise MemoryAccessError(address)
 
     def _bitband_bit(self, address: int) -> int:
         cfg = self._get_config()
-        offset = address - cfg.bitband_base
-        return (offset // 4) % 32
+        if address < cfg.bitband_base or address >= cfg.bitband_base + cfg.bitband_size:
+            raise MemoryAccessError(address)
+        bit_word_offset = (address - cfg.bitband_base) // 4
+        return bit_word_offset % 32
 
     # ==========================================================
     # Raw memory helpers
@@ -258,10 +359,7 @@ class TM4C123_Memory(BaseMemory):
                 region=region,
             )
 
-        value = 0
-        for i in range(size):
-            value |= memory[offset + i] << (8 * i)
-        return value
+        return int.from_bytes(memory[offset : offset + size], "little")
 
     def _write_bytes(
         self,
@@ -280,6 +378,6 @@ class TM4C123_Memory(BaseMemory):
                 region=region,
             )
 
+        # Mask value to size and write bytes
         value &= (1 << (size * 8)) - 1
-        for i in range(size):
-            memory[offset + i] = (value >> (8 * i)) & 0xFF
+        memory[offset : offset + size] = value.to_bytes(size, "little")

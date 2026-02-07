@@ -53,3 +53,16 @@ class BaseMemory(ABC):
         Peripheral state is managed separately by peripherals themselves.
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def read_block(self, address: int, size: int) -> bytes:
+        """Read a block of bytes from memory.
+
+        Args:
+            address: Start address
+            size: Number of bytes
+
+        Returns:
+            Bytes read
+        """
+        raise NotImplementedError
