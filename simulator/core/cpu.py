@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 
 from simulator.core.memmap import AddressSpace
 from simulator.utils.consts import align_to_page
+from simulator.interfaces.cpu import CpuSnapshot, RegisterValue
 
 if TYPE_CHECKING:
     from simulator.interfaces.interrupt_controller import InterruptEvent
@@ -196,6 +197,46 @@ class CortexM:
         if index not in _ARM_REG_MAP:
             raise ValueError(f"Invalid register index {index}; must be 0-15")
         self.engine.set_register(_ARM_REG_MAP[index], value)
+
+    def get_snapshot(self) -> CpuSnapshot:
+        """Return a snapshot of CPU registers and flags for debug/GUI."""
+        reg_defs = [
+            ("R0", UC_ARM_REG_R0, "GPR"),
+            ("R1", UC_ARM_REG_R1, "GPR"),
+            ("R2", UC_ARM_REG_R2, "GPR"),
+            ("R3", UC_ARM_REG_R3, "GPR"),
+            ("R4", UC_ARM_REG_R4, "GPR"),
+            ("R5", UC_ARM_REG_R5, "GPR"),
+            ("R6", UC_ARM_REG_R6, "GPR"),
+            ("R7", UC_ARM_REG_R7, "GPR"),
+            ("R8", UC_ARM_REG_R8, "GPR"),
+            ("R9", UC_ARM_REG_R9, "GPR"),
+            ("R10", UC_ARM_REG_R10, "GPR"),
+            ("R11", UC_ARM_REG_R11, "GPR"),
+            ("R12", UC_ARM_REG_R12, "GPR"),
+            ("SP", UC_ARM_REG_SP, "SP/PC"),
+            ("LR", UC_ARM_REG_LR, "SP/PC"),
+            ("PC", UC_ARM_REG_PC, "SP/PC"),
+            ("XPSR", UC_ARM_REG_XPSR, "STATUS"),
+            ("MSP", UC_ARM_REG_MSP, "STATUS"),
+        ]
+
+        registers = [
+            RegisterValue(name, self.engine.get_register(reg), group)
+            for name, reg, group in reg_defs
+        ]
+
+        xpsr = self.engine.get_register(UC_ARM_REG_XPSR)
+        flags = {
+            "N": bool(xpsr & (1 << 31)),
+            "Z": bool(xpsr & (1 << 30)),
+            "C": bool(xpsr & (1 << 29)),
+            "V": bool(xpsr & (1 << 28)),
+            "Q": bool(xpsr & (1 << 27)),
+            "T": bool(xpsr & (1 << 24)),
+        }
+
+        return CpuSnapshot(registers=registers, flags=flags)
     
     # Private helpers -------------------------------------------------------
     

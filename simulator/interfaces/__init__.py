@@ -8,7 +8,7 @@ Defines behavioral contracts that all implementations must satisfy:
 """
 
 from simulator.interfaces.board import Board
-from simulator.interfaces.cpu import ICPU
+from simulator.interfaces.cpu import ICPU, CpuSnapshot, RegisterValue
 from simulator.interfaces.clock import IClock, ClockSubscriber
 from simulator.interfaces.interrupt_controller import IInterruptController, InterruptEvent
 from simulator.interfaces.memory_map import IMemoryMap
@@ -19,6 +19,8 @@ from simulator.core.gpio_enums import PinLevel, PinMode
 __all__ = [
     "Board",
     "ICPU",
+    "CpuSnapshot",
+    "RegisterValue",
     "IClock",
     "ClockSubscriber",
     "IInterruptController",

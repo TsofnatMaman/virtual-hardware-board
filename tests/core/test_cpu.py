@@ -181,6 +181,22 @@ def test_cortexm_get_set_register_and_invalid_index():
         cpu.set_register(16, 0)
 
 
+def test_cortexm_get_snapshot_includes_registers_and_flags():
+    engine = DummyEngine()
+    cpu = cpu_mod.CortexM(engine, _make_address_space())
+
+    engine.set_register(cpu_mod.UC_ARM_REG_R0, 0x1234)
+    engine.set_register(cpu_mod.UC_ARM_REG_XPSR, 1 << 31)  # N flag
+
+    snapshot = cpu.get_snapshot()
+    reg_map = {reg.name: reg.value for reg in snapshot.registers}
+
+    assert reg_map["R0"] == 0x1234
+    assert "PC" in reg_map
+    assert snapshot.flags["N"] is True
+    assert snapshot.flags["Z"] is False
+
+
 def test_cortexm_tick_and_handle_interrupt():
     cpu = cpu_mod.CortexM(DummyEngine(), _make_address_space())
     cpu.tick(2)

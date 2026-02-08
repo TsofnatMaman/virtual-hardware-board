@@ -1,4 +1,4 @@
-from simulator.interfaces.cpu import ICPU
+from simulator.interfaces.cpu import ICPU, CpuSnapshot, RegisterValue
 
 
 class DummyCPU(ICPU):
@@ -11,6 +11,12 @@ class DummyCPU(ICPU):
 
     def reset(self) -> None:
         self.steps = 0
+
+    def get_snapshot(self) -> CpuSnapshot:
+        return CpuSnapshot(
+            registers=[RegisterValue("R0", self.steps)],
+            flags={"Z": False},
+        )
 
 
 def test_icpu_default_tick_calls_step():
