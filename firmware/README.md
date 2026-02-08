@@ -11,11 +11,14 @@ Simple example firmware that demonstrates GPIO control on the TM4C123.
 
 ## Files
 
-- `main.c` - Main application code
-- `startup.c` - Startup code and vector table
-- `tm4c.h` - Hardware register definitions
-- `linker.ld` - Linker script for memory layout
-- `Makefile` - Build system
+- `led_blink/tm4c/main.c` - TM4C example application
+- `led_blink/stm32/main.c` - STM32C031 example application
+- `startup.c` - Common startup and vector table
+- `boards/tm4c123/linker.ld` - TM4C linker script
+- `boards/tm4c123/tm4c.h` - TM4C register definitions
+- `boards/stm32c031/linker.ld` - STM32C031 linker script
+- `boards/stm32c031/stm32c031.h` - STM32C031 register definitions
+- `Makefile` - Unified build system
 
 ## Building
 
@@ -36,18 +39,40 @@ brew install arm-none-eabi-gcc
 **Windows:**
 Download from: <https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm>
 
-### Compile
+### Compile (unified, one command)
 
+Linux/macOS:
 ```bash
-make
+make -f firmware/Makefile BOARD=tm4c123 MAIN=firmware/led_blink/tm4c/main.c
+make -f firmware/Makefile BOARD=stm32c031 MAIN=firmware/led_blink/stm32/main.c
 ```
 
-This produces `firmware.bin` which can be loaded into the simulator.
+Windows (PowerShell + MinGW):
+```powershell
+mingw32-make -f firmware/Makefile BOARD=tm4c123 MAIN=firmware/led_blink/tm4c/main.c
+mingw32-make -f firmware/Makefile BOARD=stm32c031 MAIN=firmware/led_blink/stm32/main.c
+```
+
+If you run from inside `firmware/`, drop the `firmware/` prefix in the paths.
+
+This produces `firmware.bin` next to the selected `main.c` by default.
+
+### Running in GUI (STM32C031)
+
+```powershell
+python -m simulator_gui --board stm32c031 --firmware firmware/led_blink/stm32/firmware.bin --cycles 16000 --tick-ms 16
+```
 
 ### Clean
 
+Linux/macOS:
 ```bash
-make clean
+make -f firmware/Makefile BOARD=tm4c123 MAIN=firmware/led_blink/tm4c/main.c clean
+```
+
+Windows:
+```powershell
+mingw32-make -f firmware/Makefile BOARD=tm4c123 MAIN=firmware/led_blink/tm4c/main.c clean
 ```
 
 ## Code Overview

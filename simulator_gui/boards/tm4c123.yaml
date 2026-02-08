@@ -1,0 +1,76 @@
+board_name: TM4C123
+background_image: ../assets/tm4c.png
+
+canvas:
+  width: 438
+  height: 394
+  scale_mode: fit
+
+fallback_layout:
+  area: [20, 390, 760, 70]
+  spacing: 12
+  item_size: [28, 28]
+
+components:
+  - id: led_red
+    type: LED
+    position: [321, 322, 14, 14]
+    visual:
+      on_color: "#ff3b30"
+      off_color: "#3a0f0f"
+      border_color: "#111111"
+    binding:
+      address: 0x400253FC
+      mask: 0x02
+      size: 4
+      direction: output
+
+  - id: led_blue
+    type: LED
+    position: [335, 336, 14, 14]
+    visual:
+      on_color: "#3b82f6"
+      off_color: "#0b1a3a"
+      border_color: "#111111"
+    binding:
+      address: 0x400253FC
+      mask: 0x04
+      size: 4
+      direction: output
+
+  - id: led_green
+    type: LED
+    position: [335, 350, 14, 14]
+    visual:
+      on_color: "#22c55e"
+      off_color: "#0a2a16"
+      border_color: "#111111"
+    binding:
+      address: 0x400253FC
+      mask: 0x08
+      size: 4
+      direction: output
+
+  - id: sw1
+    type: SWITCH
+    position: [115, 340, 30, 30]
+    visual:
+      on_color: "#f59e0b"
+      off_color: "#2f2f2f"
+    binding:
+      address: 0x400253FC
+      mask: 0x10
+      size: 4
+      direction: input
+
+  - id: sw2
+    type: SWITCH
+    position: [293, 340, 30, 30]
+    visual:
+      on_color: "#f59e0b"
+      off_color: "#2f2f2f"
+    binding:
+      address: 0x400253FC
+      mask: 0x01
+      size: 4
+      direction: input

@@ -1,7 +1,36 @@
-"""Interface abstractions for the simulator."""
+"""Interface abstractions for the simulator.
 
-from simulator.interfaces.board import BaseBoard
-from simulator.interfaces.memory import BaseMemory
-from simulator.interfaces.peripheral import BasePeripherals
+Defines behavioral contracts that all implementations must satisfy:
+- Board: MCU board interface (abstract base class)
+- Peripheral: Memory-mapped peripheral protocol
+- MemoryAccessModel: How addresses map to hardware registers (board-specific semantics)
+- PinLevel, PinMode: GPIO enumerations (re-exported from core for convenience)
+"""
 
-__all__ = ["BaseBoard", "BaseMemory", "BasePeripherals"]
+from simulator.core.gpio_enums import PinLevel, PinMode
+from simulator.interfaces.board import Board
+from simulator.interfaces.clock import ClockSubscriber, IClock
+from simulator.interfaces.cpu import ICPU, CpuSnapshot, RegisterValue
+from simulator.interfaces.interrupt_controller import (
+    IInterruptController,
+    InterruptEvent,
+)
+from simulator.interfaces.memory_access import MemoryAccessModel
+from simulator.interfaces.memory_map import IMemoryMap
+from simulator.interfaces.peripheral import Peripheral
+
+__all__ = [
+    "Board",
+    "ICPU",
+    "CpuSnapshot",
+    "RegisterValue",
+    "IClock",
+    "ClockSubscriber",
+    "IInterruptController",
+    "InterruptEvent",
+    "IMemoryMap",
+    "Peripheral",
+    "MemoryAccessModel",
+    "PinLevel",
+    "PinMode",
+]

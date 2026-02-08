@@ -1,9 +1,14 @@
-/* linker.ld - linker script for the firmware simulator */
+/* linker.ld - linker script for STM32C031 firmware */
+
+/* NOTE:
+ * Adjust FLASH/RAM lengths if your exact STM32C031 variant differs.
+ * Common STM32C031C6 parts use 32K FLASH and 12K RAM.
+ */
 
 MEMORY
 {
-  FLASH (rx)  : ORIGIN = 0x08000000, LENGTH = 512K
-  RAM   (rwx) : ORIGIN = 0x20000000, LENGTH = 128K
+  FLASH (rx)  : ORIGIN = 0x08000000, LENGTH = 32K
+  RAM   (rwx) : ORIGIN = 0x20000000, LENGTH = 12K
 }
 
 /* Pointer to the top of the stack (end of RAM minus 4 to avoid overflow) */

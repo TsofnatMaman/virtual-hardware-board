@@ -1,18 +1,18 @@
 memory:
-  flash_base: 0x08000000
+  flash_base: 0x00000000
   flash_size: 524288
   sram_base: 0x20000000
   sram_size: 131072
   periph_base: 0x40000000
   periph_size: 0x00100000
-  bitband_base: 0x42000000
-  bitband_size: 0x02000000
-
-util:
-  mask_32bit: 0xFFFFFFFF
-  mask_8bit: 0xFF
+  bitband_sram_base: 0x22000000
+  bitband_sram_size: 0x02000000
+  bitband_periph_base: 0x42000000
+  bitband_periph_size: 0x02000000
 
 gpio:
+  kind: tm4c123
+  port_size: 0x1000
   ports:
     A: 0x40004000
     B: 0x40005000
@@ -26,7 +26,14 @@ gpio:
     den: 0x51C
     lock: 0x520
     cr: 0x524
+    is: 0x404
+    ibe: 0x408
+    iev: 0x40C
+    im: 0x410
+    ris: 0x414
+    mis: 0x418
     icr: 0x41C
+    afsel: 0x420
 
 sysctl:
   base: 0x400FE000
@@ -66,3 +73,4 @@ nvic:
     GPIO_PORTE: 4
     GPIO_PORTF: 30
   irq_offset: 16
+
