@@ -31,22 +31,14 @@ class CheckRunner:
         self.failed_checks = []
         self.passed_checks = []
 
-    def run_command(
+    def _run(
         self,
-        cmd: list[str],
         name: str,
+        run_live,
+        run_captured,
         show_output: bool = True,
     ) -> bool:
-        """Run a shell command and return success status.
-
-        Args:
-            cmd: Command and arguments as list
-            name: Friendly name for the check
-            show_output: Whether to show command output
-
-        Returns:
-            True if command succeeded, False otherwise
-        """
+        """Run a command and record its result."""
         if name.lower() in self.skip_checks:
             print(f"[SKIP] {name}")
             return True
@@ -57,21 +49,14 @@ class CheckRunner:
 
         try:
             if self.verbose or show_output:
-                result = subprocess.run(cmd, check=False, shell=False)  # nosec B603
-                success = result.returncode == 0
+                result = run_live()
             else:
-                result = subprocess.run(
-                    cmd,
-                    check=False,
-                    shell=False,  # nosec B603
-                    capture_output=True,
-                    text=True,
-                )
-                success = result.returncode == 0
-                if not success:
+                result = run_captured()
+                if result.returncode != 0:
                     print(result.stdout)
                     print(result.stderr)
 
+            success = result.returncode == 0
             if success:
                 print(f"[OK] {name} passed!")
                 self.passed_checks.append(name)
@@ -90,63 +75,173 @@ class CheckRunner:
     def check_black_formatting(self) -> bool:
         """Check and optionally fix code formatting with Black."""
         if self.fix:
-            return self.run_command(
-                ["black", *DIRS_TO_CHECK],
-                "Black Formatting (auto-fix enabled)",
+            name = "Black Formatting (auto-fix enabled)"
+            return self._run(
+                name,
+                lambda: subprocess.run(
+                    ["black", "simulator", "tests"], check=False, shell=False  # nosec B603
+                ),
+                lambda: subprocess.run(
+                    ["black", "simulator", "tests"],
+                    check=False,
+                    shell=False,  # nosec B603
+                    capture_output=True,
+                    text=True,
+                ),
             )
-        else:
-            return self.run_command(
-                ["black", "--check", *DIRS_TO_CHECK],
-                "Black Formatting Check",
-            )
+
+        name = "Black Formatting Check"
+        return self._run(
+            name,
+            lambda: subprocess.run(
+                ["black", "--check", "simulator", "tests"], check=False, shell=False  # nosec B603
+            ),
+            lambda: subprocess.run(
+                ["black", "--check", "simulator", "tests"],
+                check=False,
+                shell=False,  # nosec B603
+                capture_output=True,
+                text=True,
+            ),
+        )
 
     def check_isort_imports(self) -> bool:
         """Check and optionally fix import ordering with isort."""
         if self.fix:
-            return self.run_command(
-                ["isort", *DIRS_TO_CHECK],
-                "isort Import Ordering (auto-fix enabled)",
+            name = "isort Import Ordering (auto-fix enabled)"
+            return self._run(
+                name,
+                lambda: subprocess.run(
+                    ["isort", "simulator", "tests"], check=False, shell=False  # nosec B603
+                ),
+                lambda: subprocess.run(
+                    ["isort", "simulator", "tests"],
+                    check=False,
+                    shell=False,  # nosec B603
+                    capture_output=True,
+                    text=True,
+                ),
             )
-        else:
-            return self.run_command(
-                ["isort", "--check-only", *DIRS_TO_CHECK],
-                "isort Import Ordering Check",
-            )
+
+        name = "isort Import Ordering Check"
+        return self._run(
+            name,
+            lambda: subprocess.run(
+                ["isort", "--check-only", "simulator", "tests"],
+                check=False,
+                shell=False,  # nosec B603
+            ),
+            lambda: subprocess.run(
+                ["isort", "--check-only", "simulator", "tests"],
+                check=False,
+                shell=False,  # nosec B603
+                capture_output=True,
+                text=True,
+            ),
+        )
 
     def check_pylint(self) -> bool:
         """Check code quality with Pylint."""
-        return self.run_command(
-            ["pylint", SIMULATOR_DIR],
-            "Pylint Code Quality Check",
+        name = "Pylint Code Quality Check"
+        return self._run(
+            name,
+            lambda: subprocess.run(
+                ["pylint", "simulator"], check=False, shell=False  # nosec B603
+            ),
+            lambda: subprocess.run(
+                ["pylint", "simulator"],
+                check=False,
+                shell=False,  # nosec B603
+                capture_output=True,
+                text=True,
+            ),
         )
 
     def check_mypy(self) -> bool:
         """Check type hints with Mypy."""
-        return self.run_command(
-            ["mypy", SIMULATOR_DIR],
-            "Mypy Type Checking",
+        name = "Mypy Type Checking"
+        return self._run(
+            name,
+            lambda: subprocess.run(
+                ["mypy", "simulator"], check=False, shell=False  # nosec B603
+            ),
+            lambda: subprocess.run(
+                ["mypy", "simulator"],
+                check=False,
+                shell=False,  # nosec B603
+                capture_output=True,
+                text=True,
+            ),
         )
 
     def check_vulture(self) -> bool:
         """Check for dead code with Vulture."""
-        return self.run_command(
-            ["vulture", ".", "--exclude", "tests", "--min-confidence", "90"],
-            "Vulture Dead Code Check",
+        name = "Vulture Dead Code Check"
+        return self._run(
+            name,
+            lambda: subprocess.run(
+                ["vulture", ".", "--exclude", "tests", "--min-confidence", "90"],
+                check=False,
+                shell=False,  # nosec B603
+            ),
+            lambda: subprocess.run(
+                ["vulture", ".", "--exclude", "tests", "--min-confidence", "90"],
+                check=False,
+                shell=False,  # nosec B603
+                capture_output=True,
+                text=True,
+            ),
         )
 
     def check_radon_complexity(self) -> bool:
         """Check code complexity with Radon."""
-        return self.run_command(
-            ["radon", "cc", SIMULATOR_DIR, "-a"],
-            "Radon Code Complexity Check",
+        name = "Radon Code Complexity Check"
+        return self._run(
+            name,
+            lambda: subprocess.run(
+                ["radon", "cc", "simulator", "-a"], check=False, shell=False  # nosec B603
+            ),
+            lambda: subprocess.run(
+                ["radon", "cc", "simulator", "-a"],
+                check=False,
+                shell=False,  # nosec B603
+                capture_output=True,
+                text=True,
+            ),
             show_output=True,
         )
 
     def run_tests(self) -> bool:
         """Run pytest with coverage."""
-        return self.run_command(
-            ["pytest", "--cov=simulator", "--cov-report=term-missing", "--cov-report=xml", *DIRS_TO_CHECK],
-            "Pytest + Coverage",
+        name = "Pytest + Coverage"
+        return self._run(
+            name,
+            lambda: subprocess.run(
+                [
+                    "pytest",
+                    "--cov=simulator",
+                    "--cov-report=term-missing",
+                    "--cov-report=xml",
+                    "simulator",
+                    "tests",
+                ],
+                check=False,
+                shell=False,  # nosec B603
+            ),
+            lambda: subprocess.run(
+                [
+                    "pytest",
+                    "--cov=simulator",
+                    "--cov-report=term-missing",
+                    "--cov-report=xml",
+                    "simulator",
+                    "tests",
+                ],
+                check=False,
+                shell=False,  # nosec B603
+                capture_output=True,
+                text=True,
+            ),
             show_output=True,
         )
 

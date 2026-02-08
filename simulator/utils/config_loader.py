@@ -204,19 +204,8 @@ def _ranges_overlap(a_base: int, a_size: int, b_base: int, b_size: int) -> bool:
     return not (a_base + a_size <= b_base or b_base + b_size <= a_base)
 
 
-def _validate_memory_config(mem: MemoryConfig) -> None:
-    """Basic sanity checks for memory layout to fail fast on bad configs."""
-    _ensure_positive_sizes(
-        [mem.flash_size, mem.sram_size, mem.periph_size],
-        "memory sizes must be positive",
-    )
-
-    _ensure_positive_sizes(
-        [mem.bitband_sram_size, mem.bitband_periph_size],
-        "bit-band alias sizes must be positive",
-    )
-
-    overlap_checks = [
+def _memory_overlap_checks(mem: MemoryConfig) -> list[tuple[int, int, int, int, str]]:
+    return [
         (
             mem.periph_base,
             mem.periph_size,
@@ -261,7 +250,20 @@ def _validate_memory_config(mem: MemoryConfig) -> None:
         ),
     ]
 
-    for a_base, a_size, b_base, b_size, message in overlap_checks:
+
+def _validate_memory_config(mem: MemoryConfig) -> None:
+    """Basic sanity checks for memory layout to fail fast on bad configs."""
+    _ensure_positive_sizes(
+        [mem.flash_size, mem.sram_size, mem.periph_size],
+        "memory sizes must be positive",
+    )
+
+    _ensure_positive_sizes(
+        [mem.bitband_sram_size, mem.bitband_periph_size],
+        "bit-band alias sizes must be positive",
+    )
+
+    for a_base, a_size, b_base, b_size, message in _memory_overlap_checks(mem):
         if _ranges_overlap(a_base, a_size, b_base, b_size):
             raise ConfigurationError(message)
 
