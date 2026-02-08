@@ -168,6 +168,81 @@ class TestParseSimulatorCfgFromDict:
         with pytest.raises(ConfigurationError):
             _parse_simulator_cfg_from_dict(valid_config_dict)
 
+    def test_parse_missing_port_size(self, valid_config_dict):
+        valid_config_dict["gpio"].pop("port_size")
+        with pytest.raises(ConfigurationError):
+            _parse_simulator_cfg_from_dict(valid_config_dict)
+
+    def test_parse_invalid_schema_type_error(self, valid_config_dict):
+        # Remove required memory keys to trigger TypeError in MemoryConfig
+        valid_config_dict["memory"] = {"flash_base": 0x08000000}
+        with pytest.raises(ConfigurationError):
+            _parse_simulator_cfg_from_dict(valid_config_dict)
+
+
+class TestMemoryValidation:
+    def test_validate_memory_negative_sizes(self, valid_simulator_config_dict):
+        import copy
+        cfg = copy.deepcopy(valid_simulator_config_dict)
+        cfg["memory"]["flash_size"] = 0
+        with pytest.raises(ConfigurationError):
+            _parse_simulator_cfg_from_dict(cfg)
+
+    def test_validate_memory_overlaps(self, valid_simulator_config_dict):
+        import copy
+        cfg = copy.deepcopy(valid_simulator_config_dict)
+        # Peripheral overlaps flash
+        cfg["memory"]["periph_base"] = cfg["memory"]["flash_base"]
+        with pytest.raises(ConfigurationError):
+            _parse_simulator_cfg_from_dict(cfg)
+
+    def test_validate_bitband_sizes(self, valid_simulator_config_dict):
+        import copy
+        cfg = copy.deepcopy(valid_simulator_config_dict)
+        cfg["memory"]["bitband_sram_size"] = 0
+        with pytest.raises(ConfigurationError):
+            _parse_simulator_cfg_from_dict(cfg)
+
+    def test_validate_periph_overlaps_sram(self, valid_simulator_config_dict):
+        import copy
+        cfg = copy.deepcopy(valid_simulator_config_dict)
+        cfg["memory"]["periph_base"] = cfg["memory"]["sram_base"]
+        with pytest.raises(ConfigurationError):
+            _parse_simulator_cfg_from_dict(cfg)
+
+    def test_validate_bitband_overlaps(self, valid_simulator_config_dict):
+        import copy
+        cfg = copy.deepcopy(valid_simulator_config_dict)
+        mem = cfg["memory"]
+        # SRAM bitband overlaps flash
+        mem["bitband_sram_base"] = mem["flash_base"]
+        with pytest.raises(ConfigurationError):
+            _parse_simulator_cfg_from_dict(cfg)
+
+        # SRAM bitband overlaps SRAM
+        mem["bitband_sram_base"] = mem["sram_base"]
+        with pytest.raises(ConfigurationError):
+            _parse_simulator_cfg_from_dict(cfg)
+
+        # Peripheral bitband overlaps flash
+        mem["bitband_sram_base"] = 0x22000000
+        mem["bitband_periph_base"] = mem["flash_base"]
+        with pytest.raises(ConfigurationError):
+            _parse_simulator_cfg_from_dict(cfg)
+
+        # Peripheral bitband overlaps SRAM
+        mem["bitband_periph_base"] = mem["sram_base"]
+        with pytest.raises(ConfigurationError):
+            _parse_simulator_cfg_from_dict(cfg)
+
+
+def test_clear_config_cache_clears_loader():
+    from simulator.utils import config_loader
+
+    config_loader._LOADER_CACHE["dummy"] = object()
+    config_loader.clear_config_cache()
+    assert config_loader._LOADER_CACHE == {}
+
 
 class TestLoadConfig:
     def test_load_config_success(self, temp_yaml_file, minimal_simulator_config_dict):

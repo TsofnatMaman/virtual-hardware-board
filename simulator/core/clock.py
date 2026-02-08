@@ -46,7 +46,7 @@ class Clock(IClock):
             # Prefer tick(cycles) if implemented
             try:
                 subscriber.tick(cycles)
-            except TypeError:
+            except (TypeError, AttributeError):
                 # Fallback: subscriber.tick() or subscriber.step()
                 if hasattr(subscriber, "tick"):
                     for _ in range(cycles):

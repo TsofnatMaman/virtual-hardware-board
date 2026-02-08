@@ -10,6 +10,7 @@ def test_tm4c_bitband_access_decode_encode():
     assert model.decode_register_access(base + 0x004, 4) == ("DATA_MASKED", 0x004)
     assert model.decode_register_access(base + 0x400, 4) == ("DIR", 0x400)
     assert model.decode_register_access(base - 4, 4) is None
+    assert model.decode_register_access(base + 0x430, 4) is None
 
     assert model.encode_register_address("DATA") == base + 0x3FC
     assert model.encode_register_address("AFSEL") == base + 0x420

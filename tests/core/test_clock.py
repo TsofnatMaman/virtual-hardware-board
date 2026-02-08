@@ -21,8 +21,17 @@ class SubscriberNoArgs:
         self.calls += 1
 
 
+class SubscriberWithStepOnly:
+    def __init__(self):
+        self.calls = 0
+
+    def step(self) -> None:
+        self.calls += 1
+
+
 def test_clock_subscribe_unsubscribe_and_tick():
     clock = Clock(frequency=1_000)
+    assert clock.frequency == 1_000
     sub = SubscriberWithCycles()
 
     clock.subscribe(sub)
@@ -46,6 +55,23 @@ def test_clock_tick_fallback_for_no_args_subscriber():
     clock.tick(3)
     assert clock.cycle_count == 3
     assert sub.calls == 3
+
+
+def test_clock_tick_with_zero_cycles_no_notify():
+    clock = Clock()
+    sub = SubscriberWithCycles()
+    clock.subscribe(sub)
+    clock.tick(0)
+    assert clock.cycle_count == 0
+    assert sub.calls == 0
+
+
+def test_clock_tick_fallback_step_only_subscriber():
+    clock = Clock()
+    sub = SubscriberWithStepOnly()
+    clock.subscribe(sub)
+    clock.tick(2)
+    assert sub.calls == 2
 
 
 def test_clock_reset():

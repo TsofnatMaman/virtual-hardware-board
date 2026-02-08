@@ -44,3 +44,8 @@ def test_base_peripheral_emit_interrupt():
     event = cpu.events[0]
     assert event.source is periph
     assert event.vector == 3
+
+
+def test_base_peripheral_emit_without_controller_no_error():
+    periph = DummyPeripheral()
+    periph.emit_interrupt(vector=1)

@@ -11,6 +11,7 @@ def test_stm32_direct_access_decode_encode():
     assert decoded == ("ODR", 0x14)
 
     assert model.decode_register_access(base - 4, 4) is None
+    assert model.decode_register_access(base + 0x02, 4) is None
     assert model.encode_register_address("ODR") == base + 0x14
 
     with pytest.raises(ValueError):
