@@ -29,6 +29,7 @@ from simulator.core.sysctl import SysCtl
 
 # Board implementations (auto-registers when imported)
 from simulator.stm32 import STM32F4Board
+from simulator.stm32c031 import STM32C031Board
 from simulator.tm4c import TM4C123Board
 
 __all__ = [
@@ -47,5 +48,6 @@ __all__ = [
     "verify_boards_registered",
     # Concrete boards
     "STM32F4Board",
+    "STM32C031Board",
     "TM4C123Board",
 ]

@@ -9,7 +9,7 @@ from simulator_gui import run_gui
 
 
 if __name__ == "__main__":
-    firmware = ROOT / "firmware" / "led_blink" / "firmware.bin"
+    firmware = ROOT / "firmware" / "led_blink" / "tm4c" / "firmware.bin"
     run_gui(
         [
             "--board",

@@ -18,5 +18,5 @@ pip install -r requirements-gui.txt
 python examples/run_gui.py
 
 # or run directly
-python -m simulator_gui --board tm4c123 --firmware firmware/led_blink/firmware.bin
+python -m simulator_gui --board tm4c123 --firmware firmware/led_blink/tm4c/firmware.bin
 ```

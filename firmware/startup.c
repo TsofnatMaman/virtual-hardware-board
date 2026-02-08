@@ -1,4 +1,6 @@
-// cppcheck-suppress missingIncludeSystem
+// Common Cortex-M startup (minimal vector table, data/bss init).
+// Suitable for TM4C123 and STM32C031 in this repo.
+
 #include <stdint.h>
 
 /* `main` is defined in another file */

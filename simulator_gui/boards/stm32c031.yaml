@@ -1,0 +1,39 @@
+board_name: STM32C031
+background_image: ../assets/board_placeholder.png
+
+canvas:
+  width: 800
+  height: 480
+  scale_mode: fit
+
+fallback_layout:
+  area: [20, 390, 760, 70]
+  spacing: 12
+  item_size: [28, 28]
+
+components:
+  - id: led_ld4
+    type: LED
+    position: [610, 210, 24, 24]
+    visual:
+      on_color: "#ff3b30"
+      off_color: "#3a0f0f"
+      border_color: "#111111"
+    binding:
+      address: 0x50000014
+      mask: 0x20
+      size: 4
+      direction: output
+
+  - id: led_ld5
+    type: LED
+    position: [640, 210, 24, 24]
+    visual:
+      on_color: "#22c55e"
+      off_color: "#0a2a16"
+      border_color: "#111111"
+    binding:
+      address: 0x50000014
+      mask: 0x40
+      size: 4
+      direction: output

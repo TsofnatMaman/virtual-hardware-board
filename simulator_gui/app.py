@@ -14,11 +14,13 @@ from simulator_gui.controller import SimulationController
 from simulator_gui.registry import default_registry
 from simulator_gui.view.main_window import MainWindow
 from simulator.stm32.board import STM32F4Board
+from simulator.stm32c031.board import STM32C031Board
 from simulator.tm4c.board import TM4C123Board
 
 
 BOARD_MAP = {
     "stm32f4": STM32F4Board,
+    "stm32c031": STM32C031Board,
     "tm4c123": TM4C123Board,
 }
 

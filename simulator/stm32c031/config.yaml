@@ -1,0 +1,54 @@
+memory:
+  flash_base: 0x08000000
+  flash_size: 0x00008000  # 32 KB
+  sram_base: 0x20000000
+  sram_size: 0x00003000   # 12 KB
+  # Cover both RCC (0x40021000) and GPIOA (0x50000000)
+  periph_base: 0x40000000
+  periph_size: 0x10010000
+  bitband_sram_base: 0x22000000
+  bitband_sram_size: 0x02000000
+  bitband_periph_base: 0x42000000
+  bitband_periph_size: 0x02000000
+
+gpio:
+  kind: stm32
+  port_size: 0x400
+  ports:
+    A: 0x50000000
+  offsets:
+    idr: 0x10
+    odr: 0x14
+    bsrr: 0x18
+
+sysctl:
+  base: 0x40021000
+  registers:
+    rcc_iopenr: 0x34
+
+pins:
+  pin_masks:
+    PIN0: 0x0001
+    PIN1: 0x0002
+    PIN2: 0x0004
+    PIN3: 0x0008
+    PIN4: 0x0010
+    PIN5: 0x0020
+    PIN6: 0x0040
+    PIN7: 0x0080
+    PIN8: 0x0100
+    PIN9: 0x0200
+    PIN10: 0x0400
+    PIN11: 0x0800
+    PIN12: 0x1000
+    PIN13: 0x2000
+    PIN14: 0x4000
+    PIN15: 0x8000
+  leds:
+    LD4: 0x0020
+    LD5: 0x0040
+  switches: {}
+
+nvic:
+  irq: {}
+  irq_offset: 16
