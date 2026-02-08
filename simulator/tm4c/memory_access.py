@@ -59,6 +59,8 @@ class TM4C123BitBandedAccessModel(MemoryAccessModel):
         0x420: "AFSEL",
         0x500: "DEN",
     }
+
+    _CONTROL_ADDRESSES = {v: k for k, v in _CONTROL_REGISTERS.items()}
     
     def __init__(self, gpio_base: int, num_pins: int = 8):
         """Initialize with GPIO port base address.
@@ -112,9 +114,8 @@ class TM4C123BitBandedAccessModel(MemoryAccessModel):
         if register_name == "DATA" or register_name == "DATA_MASKED":
             return self.gpio_base + 0x3FC  # Full access mask
         
-        if register_name in self._CONTROL_REGISTERS:
-            offset = [k for k, v in self._CONTROL_REGISTERS.items() if v == register_name][0]
-            return self.gpio_base + offset
+        if register_name in self._CONTROL_ADDRESSES:
+            return self.gpio_base + self._CONTROL_ADDRESSES[register_name]
         
         raise ValueError(f"Unknown register: {register_name}")
     
