@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PySide6 import QtCore, QtGui
+from PySide6 import QtGui
 
 from simulator_gui.backend import SimulatorBackend
 from simulator_gui.components.base import ComponentController, ComponentGraphicsItem

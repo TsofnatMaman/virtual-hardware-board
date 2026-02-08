@@ -1,5 +1,3 @@
-import pytest
-
 from simulator.core.exceptions import (
     MemoryAccessError,
     MemoryAlignmentError,

@@ -12,10 +12,8 @@ Usage:
 """
 
 import argparse
-import subprocess
+import subprocess  # nosec B404
 import sys
-from pathlib import Path
-from typing import Optional
 
 # Directories to check
 SIMULATOR_DIR = "simulator"
@@ -59,12 +57,13 @@ class CheckRunner:
 
         try:
             if self.verbose or show_output:
-                result = subprocess.run(cmd, check=False)
+                result = subprocess.run(cmd, check=False, shell=False)  # nosec B603
                 success = result.returncode == 0
             else:
                 result = subprocess.run(
                     cmd,
                     check=False,
+                    shell=False,  # nosec B603
                     capture_output=True,
                     text=True,
                 )
@@ -84,7 +83,7 @@ class CheckRunner:
 
         except FileNotFoundError as e:
             print(f"[FAIL] Error: {e}")
-            print(f"   Make sure all tools are installed: pip install -r requirements-dev.txt")
+            print("   Make sure all tools are installed: pip install -r requirements-dev.txt")
             self.failed_checks.append(name)
             return False
 

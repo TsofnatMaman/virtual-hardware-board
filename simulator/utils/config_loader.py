@@ -194,40 +194,76 @@ def _build_gpio_config(gpio_raw: dict[str, Any]) -> GpioConfig:
     raise ConfigurationError("gpio.kind must be 'stm32' or 'tm4c123'")
 
 
+def _ensure_positive_sizes(sizes: list[int], message: str) -> None:
+    for size in sizes:
+        if size <= 0:
+            raise ConfigurationError(message)
+
+
+def _ranges_overlap(a_base: int, a_size: int, b_base: int, b_size: int) -> bool:
+    return not (a_base + a_size <= b_base or b_base + b_size <= a_base)
+
+
 def _validate_memory_config(mem: MemoryConfig) -> None:
     """Basic sanity checks for memory layout to fail fast on bad configs."""
-    if mem.flash_size <= 0 or mem.sram_size <= 0 or mem.periph_size <= 0:
-        raise ConfigurationError("memory sizes must be positive")
+    _ensure_positive_sizes(
+        [mem.flash_size, mem.sram_size, mem.periph_size],
+        "memory sizes must be positive",
+    )
 
-    if mem.bitband_sram_size <= 0 or mem.bitband_periph_size <= 0:
-        raise ConfigurationError("bit-band alias sizes must be positive")
+    _ensure_positive_sizes(
+        [mem.bitband_sram_size, mem.bitband_periph_size],
+        "bit-band alias sizes must be positive",
+    )
 
-    # Peripheral window must not overlap flash or sram
-    def overlaps(a_base: int, a_size: int, b_base: int, b_size: int) -> bool:
-        return not (a_base + a_size <= b_base or b_base + b_size <= a_base)
+    overlap_checks = [
+        (
+            mem.periph_base,
+            mem.periph_size,
+            mem.flash_base,
+            mem.flash_size,
+            "peripheral window overlaps flash",
+        ),
+        (
+            mem.periph_base,
+            mem.periph_size,
+            mem.sram_base,
+            mem.sram_size,
+            "peripheral window overlaps sram",
+        ),
+        (
+            mem.bitband_sram_base,
+            mem.bitband_sram_size,
+            mem.flash_base,
+            mem.flash_size,
+            "SRAM bit-band alias overlaps flash",
+        ),
+        (
+            mem.bitband_sram_base,
+            mem.bitband_sram_size,
+            mem.sram_base,
+            mem.sram_size,
+            "SRAM bit-band alias overlaps SRAM window",
+        ),
+        (
+            mem.bitband_periph_base,
+            mem.bitband_periph_size,
+            mem.flash_base,
+            mem.flash_size,
+            "Peripheral bit-band alias overlaps flash",
+        ),
+        (
+            mem.bitband_periph_base,
+            mem.bitband_periph_size,
+            mem.sram_base,
+            mem.sram_size,
+            "Peripheral bit-band alias overlaps SRAM",
+        ),
+    ]
 
-    if overlaps(mem.periph_base, mem.periph_size, mem.flash_base, mem.flash_size):
-        raise ConfigurationError("peripheral window overlaps flash")
-    if overlaps(mem.periph_base, mem.periph_size, mem.sram_base, mem.sram_size):
-        raise ConfigurationError("peripheral window overlaps sram")
-
-    # Bit-band aliases must not overlap core memory windows
-    if overlaps(
-        mem.bitband_sram_base, mem.bitband_sram_size, mem.flash_base, mem.flash_size
-    ):
-        raise ConfigurationError("SRAM bit-band alias overlaps flash")
-    if overlaps(
-        mem.bitband_sram_base, mem.bitband_sram_size, mem.sram_base, mem.sram_size
-    ):
-        raise ConfigurationError("SRAM bit-band alias overlaps SRAM window")
-    if overlaps(
-        mem.bitband_periph_base, mem.bitband_periph_size, mem.flash_base, mem.flash_size
-    ):
-        raise ConfigurationError("Peripheral bit-band alias overlaps flash")
-    if overlaps(
-        mem.bitband_periph_base, mem.bitband_periph_size, mem.sram_base, mem.sram_size
-    ):
-        raise ConfigurationError("Peripheral bit-band alias overlaps SRAM")
+    for a_base, a_size, b_base, b_size, message in overlap_checks:
+        if _ranges_overlap(a_base, a_size, b_base, b_size):
+            raise ConfigurationError(message)
 
     # Alias windows may be larger than the actual underlying regions; bounds are
     # enforced at access time.
