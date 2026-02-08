@@ -15,6 +15,7 @@ from simulator.core.memmap import AddressSpace
 from simulator.core.cpu import CortexM
 from simulator.core.clock import Clock
 from simulator.core.interrupt_controller import InterruptController
+from simulator.core.sysctl import SysCtl
 from simulator.core.builders import create_address_space_from_config, create_cpu_for_address_space
 from simulator.interfaces.peripheral import Peripheral
 from .gpio import STM32GPIO
@@ -49,6 +50,7 @@ class STM32F4Board(Board):
         
         # Initialize peripherals
         self._peripherals: dict[str, Peripheral] = {}
+        self._init_sysctl()
         self._init_gpio()
         self._wire_clock_and_interrupts()
     
@@ -60,6 +62,17 @@ class STM32F4Board(Board):
         if mask == 0:
             raise ValueError("GPIO pin mask is empty; check config.pins.pin_masks")
         return mask
+
+    def _init_sysctl(self) -> None:
+        """Initialize system control (RCC/SYSCTL) registers."""
+        sysctl_cfg = self.config.sysctl
+        sysctl = SysCtl(sysctl_cfg, base_addr=sysctl_cfg.base, name="SYSCTL")
+        self._peripherals["SYSCTL"] = sysctl
+        self._address_space.register_peripheral(
+            sysctl_cfg.base,
+            sysctl.size,
+            sysctl,
+        )
 
     def _init_gpio(self) -> None:
         """Initialize GPIO ports."""

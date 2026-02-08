@@ -144,7 +144,7 @@ def test_cortexm_reset_success():
 
     assert engine.uc.regs[cpu_mod.UC_ARM_REG_MSP] == msp
     assert engine.uc.regs[cpu_mod.UC_ARM_REG_SP] == msp
-    assert engine.uc.regs[cpu_mod.UC_ARM_REG_PC] == (reset_vector & cpu_mod._PC_THUMB_MASK)
+    assert engine.uc.regs[cpu_mod.UC_ARM_REG_PC] == reset_vector
 
 
 def test_cortexm_reset_invalid_msp_raises():

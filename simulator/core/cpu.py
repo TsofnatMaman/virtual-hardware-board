@@ -94,7 +94,8 @@ class UnicornEngine:
     
     def step(self, pc: int) -> None:
         """Execute one instruction from PC."""
-        self.uc.emu_start(pc, 0xFFFFFFFF, count=1)
+        # Cortex-M is always Thumb; Unicorn expects bit0 set for Thumb execution.
+        self.uc.emu_start(pc | 1, 0xFFFFFFFF, count=1)
 
 
 class CortexM:
@@ -163,7 +164,8 @@ class CortexM:
         # Set stack pointer and program counter
         self.engine.set_register(UC_ARM_REG_MSP, msp)
         self.engine.set_register(UC_ARM_REG_SP, msp)
-        self.engine.set_register(UC_ARM_REG_PC, reset_vector & _PC_THUMB_MASK)
+        # Unicorn expects the Thumb bit set in PC when running in THUMB mode.
+        self.engine.set_register(UC_ARM_REG_PC, reset_vector)
     
     def step(self) -> None:
         """Execute one CPU instruction."""

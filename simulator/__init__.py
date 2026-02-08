@@ -25,6 +25,7 @@ from simulator.core.cpu import CortexM
 from simulator.core.clock import Clock
 from simulator.core.interrupt_controller import InterruptController
 from simulator.core.simulation_engine import SimulationEngine
+from simulator.core.sysctl import SysCtl
 
 # Board implementations (auto-registers when imported)
 from simulator.stm32 import STM32F4Board
@@ -39,6 +40,7 @@ __all__ = [
     "Clock",
     "InterruptController",
     "SimulationEngine",
+    "SysCtl",
     # Board creation
     "create_board",
     "list_available_boards",

@@ -31,6 +31,7 @@ from simulator.core.cpu import CortexM, UnicornEngine
 from simulator.core.clock import Clock
 from simulator.core.interrupt_controller import InterruptController
 from simulator.core.peripheral import BasePeripheral
+from simulator.core.sysctl import SysCtl
 from simulator.core.simulation_engine import SimulationEngine
 from simulator.core.gpio_enums import PinLevel, PinMode
 from simulator.core.board import BoardRegistry, create_board, list_available_boards
@@ -62,6 +63,7 @@ __all__ = [
     "InterruptController",
     # Peripheral base
     "BasePeripheral",
+    "SysCtl",
     # Simulation engine
     "SimulationEngine",
     # GPIO shared infrastructure
