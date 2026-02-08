@@ -12,6 +12,7 @@ memory:
 
 gpio:
   kind: stm32
+  port_size: 0x400
   ports:
     A: 0x40020000
     B: 0x40020400

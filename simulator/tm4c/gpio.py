@@ -56,7 +56,6 @@ from simulator.core.register import ReadOnlyRegister, RegisterFile, SimpleRegist
 from simulator.core.gpio_enums import PinLevel, PinMode
 from simulator.core.peripheral import BasePeripheral
 from simulator.utils.config_loader import Tm4cGpioConfig
-from simulator.utils.consts import ConstUtils
 
 
 class TM4CMaskedDataRegister(SimpleRegister):
@@ -68,9 +67,10 @@ class TM4CMaskedDataRegister(SimpleRegister):
     Example: write to (DATA + 0x0C) -> mask = 0x0C >> 2 = 3 -> affects pins 0,1
     """
     
-    def __init__(self, offset: int):
+    def __init__(self, offset: int, data_mask: int):
         super().__init__(offset, 4, 0)
         self.data_offset = offset
+        self._data_mask = data_mask
     
     def write_masked(self, address: int, value: int) -> None:
         """Write with mask applied from address bits."""
@@ -79,8 +79,8 @@ class TM4CMaskedDataRegister(SimpleRegister):
         if diff <= 0 or diff > 0x3FC:
             raise ValueError(f"Invalid masked write offset {diff:X}")
         
-        mask = (diff >> 2) & ConstUtils.MASK_8_BITS
-        current = self.value & ConstUtils.MASK_8_BITS
+        mask = (diff >> 2) & self._data_mask
+        current = self.value & self._data_mask
         new_value = (current & ~mask) | (value & mask)
         self.value = new_value
     
@@ -91,9 +91,9 @@ class TM4CMaskedDataRegister(SimpleRegister):
             return 0
         
         if diff == 0:
-            return self.value & ConstUtils.MASK_8_BITS
+            return self.value & self._data_mask
         
-        mask = (diff >> 2) & ConstUtils.MASK_8_BITS
+        mask = (diff >> 2) & self._data_mask
         return self.value & mask
 
 
@@ -130,17 +130,22 @@ class TM4C123GPIO(BasePeripheral):
     def __init__(
         self,
         cfg: Tm4cGpioConfig,
+        data_mask: int,
         initial_value: int = 0,
         base_addr: int = 0,
         name: str | None = None,
     ):
-        super().__init__(name=name or "TM4C123GPIO", size=0x1000, base_addr=base_addr)
+        super().__init__(name=name or "TM4C123GPIO", size=cfg.port_size, base_addr=base_addr)
         self.cfg = cfg
+        if data_mask <= 0:
+            raise ValueError("data_mask must be positive")
+        self._data_mask = data_mask
+        self._pin_count = data_mask.bit_length()
         self._registers = RegisterFile()
         
         # Initialize registers
-        data_reg = TM4CMaskedDataRegister(cfg.offsets.data)
-        data_reg.value = initial_value & ConstUtils.MASK_8_BITS
+        data_reg = TM4CMaskedDataRegister(cfg.offsets.data, self._data_mask)
+        data_reg.value = initial_value & self._data_mask
         
         ris_reg = TM4CRawInterruptStatus(cfg.offsets.ris, 4, 0)
         icr_reg = TM4CInterruptClear(cfg.offsets.icr, ris_reg)
@@ -204,7 +209,7 @@ class TM4C123GPIO(BasePeripheral):
         
         if diff == 0:
             # Direct DATA write
-            self._registers.write(offset, size, value & ConstUtils.MASK_8_BITS)
+            self._registers.write(offset, size, value & self._data_mask)
             return
         
         # Interrupt clear
@@ -213,7 +218,7 @@ class TM4C123GPIO(BasePeripheral):
             return
         
         # All other registers
-        self._registers.write(offset, size, value & ConstUtils.MASK_8_BITS)
+        self._registers.write(offset, size, value & self._data_mask)
     
     def reset(self) -> None:
         """Reset all registers."""
@@ -222,8 +227,8 @@ class TM4C123GPIO(BasePeripheral):
     # Convenience methods for testing/debugging
     def set_pin(self, pin: int, level: PinLevel) -> None:
         """Set a pin directly (simulate external input)."""
-        if not (0 <= pin < 8):
-            raise ValueError(f"Invalid pin {pin}; must be 0-7")
+        if not (0 <= pin < self._pin_count):
+            raise ValueError(f"Invalid pin {pin}; must be 0-{self._pin_count - 1}")
         
         current = self._data_reg.value
         if level == PinLevel.HIGH:
@@ -234,8 +239,8 @@ class TM4C123GPIO(BasePeripheral):
     
     def get_pin(self, pin: int) -> PinLevel:
         """Get the state of a pin."""
-        if not (0 <= pin < 8):
-            raise ValueError(f"Invalid pin {pin}; must be 0-7")
+        if not (0 <= pin < self._pin_count):
+            raise ValueError(f"Invalid pin {pin}; must be 0-{self._pin_count - 1}")
         
         value = self._data_reg.value
         return PinLevel((value >> pin) & 1)
@@ -245,8 +250,8 @@ class TM4C123GPIO(BasePeripheral):
         if not (0 <= pin < 8):
             raise ValueError(f"Invalid pin {pin}; must be 0-7")
         
-        dir_val = self._dir_reg.value & ConstUtils.MASK_8_BITS
-        afsel_val = self._afsel_reg.value & ConstUtils.MASK_8_BITS
+        dir_val = self._dir_reg.value & self._data_mask
+        afsel_val = self._afsel_reg.value & self._data_mask
         bit = 1 << pin
         
         if dir_val & bit:
@@ -257,11 +262,11 @@ class TM4C123GPIO(BasePeripheral):
     
     def set_pin_mode(self, pin: int, mode: PinMode) -> None:
         """Set pin mode by updating DIR and AFSEL."""
-        if not (0 <= pin < 8):
-            raise ValueError(f"Invalid pin {pin}; must be 0-7")
+        if not (0 <= pin < self._pin_count):
+            raise ValueError(f"Invalid pin {pin}; must be 0-{self._pin_count - 1}")
         
-        dir_val = self._dir_reg.value & ConstUtils.MASK_8_BITS
-        afsel_val = self._afsel_reg.value & ConstUtils.MASK_8_BITS
+        dir_val = self._dir_reg.value & self._data_mask
+        afsel_val = self._afsel_reg.value & self._data_mask
         bit = 1 << pin
         
         if mode == PinMode.OUTPUT:

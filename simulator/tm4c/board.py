@@ -50,15 +50,26 @@ class TM4C123Board(Board):
         self._init_gpio()
         self._wire_clock_and_interrupts()
     
+    def _pin_data_mask(self) -> int:
+        """Compute GPIO data mask from config pin masks."""
+        mask = 0
+        for value in self.config.pins.pin_masks.values():
+            mask |= value
+        if mask == 0:
+            raise ValueError("GPIO pin mask is empty; check config.pins.pin_masks")
+        return mask
+
     def _init_gpio(self) -> None:
         """Initialize GPIO ports."""
         gpio_config = self.config.gpio
         if gpio_config.kind != "tm4c123":
             raise ValueError(f"Expected tm4c123 GPIO config, got {gpio_config.kind}")
+        data_mask = self._pin_data_mask()
         
         for port_name, base_address in gpio_config.ports.items():
             gpio = TM4C123GPIO(
                 gpio_config,
+                data_mask=data_mask,
                 initial_value=0x00,
                 base_addr=base_address,
                 name=f"GPIO_{port_name}",
@@ -68,7 +79,7 @@ class TM4C123Board(Board):
             self._peripherals[f"GPIO_{port_name}"] = gpio
             self._address_space.register_peripheral(
                 base_address,
-                0x1000,  # TM4C GPIO port is 0x1000 bytes
+                gpio_config.port_size,
                 gpio,
             )
 
@@ -132,4 +143,3 @@ class TM4C123Board(Board):
     def write(self, address: int, size: int, value: int) -> None:
         """Write to the board address space."""
         self._address_space.write(address, size, value)
-

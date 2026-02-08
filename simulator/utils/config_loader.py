@@ -53,6 +53,7 @@ class Tm4cGpioConfig:
     kind: Literal["tm4c123"]
     ports: dict[str, int]
     offsets: Tm4cGpioOffsets
+    port_size: int
 
 
 @dataclass(frozen=True)
@@ -60,6 +61,7 @@ class Stm32GpioConfig:
     kind: Literal["stm32"]
     ports: dict[str, int]
     offsets: Stm32GpioOffsets
+    port_size: int
 
 
 GpioConfig = Union[Tm4cGpioConfig, Stm32GpioConfig]
@@ -172,18 +174,21 @@ def _build_gpio_config(gpio_raw: dict[str, Any]) -> GpioConfig:
     kind = gpio_raw.get("kind")
     ports = {k: int(v) for k, v in gpio_raw["ports"].items()}
     offsets_raw = gpio_raw["offsets"]
+    port_size = int(gpio_raw["port_size"])
 
     if kind == "tm4c123":
         return Tm4cGpioConfig(
             kind="tm4c123",
             ports=ports,
             offsets=_build_tm4c_gpio_offsets(offsets_raw),
+            port_size=port_size,
         )
     if kind == "stm32":
         return Stm32GpioConfig(
             kind="stm32",
             ports=ports,
             offsets=_build_stm32_gpio_offsets(offsets_raw),
+            port_size=port_size,
         )
 
     raise ConfigurationError("gpio.kind must be 'stm32' or 'tm4c123'")

@@ -12,6 +12,7 @@ memory:
 
 gpio:
   kind: tm4c123
+  port_size: 0x1000
   ports:
     A: 0x40004000
     B: 0x40005000

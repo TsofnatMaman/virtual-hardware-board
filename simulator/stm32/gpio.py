@@ -39,14 +39,6 @@ from simulator.core.register import (
 from simulator.core.gpio_enums import PinLevel
 from simulator.core.peripheral import BasePeripheral
 from simulator.utils.config_loader import Stm32GpioConfig
-from simulator.utils.consts import ConstUtils
-from .consts import (
-    GPIO_PORT_BASE_DEFAULT,
-    GPIO_DATA_MASK_16BIT,
-    REG_IDR,
-    REG_ODR,
-    REG_BSRR,
-)
 
 
 class STM32OutputDataRegister(SimpleRegister):
@@ -61,21 +53,22 @@ class STM32InputDataRegister(ReadOnlyRegister):
     In simulation, we allow setting external input via set_pin(), or default to ODR.
     """
     
-    def __init__(self, offset: int, odr_register: Register):
+    def __init__(self, offset: int, odr_register: Register, data_mask: int):
         super().__init__(offset, 4, 0)
         self.odr = odr_register
+        self._data_mask = data_mask
         self._external_inputs = None  # None means "follow ODR", otherwise use this value
     
     def read(self, size: int) -> int:
         # If external inputs are set (simulating external pin state), return those
         # Otherwise, reflect the output state
         if self._external_inputs is not None:
-            return self._external_inputs & GPIO_DATA_MASK_16BIT
+            return self._external_inputs & self._data_mask
         return self.odr.read(size)
     
     def set_external_input(self, value: int) -> None:
         """Set external input state (simulates pins being driven externally)."""
-        self._external_inputs = value & GPIO_DATA_MASK_16BIT
+        self._external_inputs = value & self._data_mask
 
 
 class STM32BitSetResetRegister(WriteOnlyRegister):
@@ -85,21 +78,22 @@ class STM32BitSetResetRegister(WriteOnlyRegister):
     Writing to BSRR atomically modifies ODR.
     """
     
-    def __init__(self, offset: int, odr_register: Register):
+    def __init__(self, offset: int, odr_register: Register, data_mask: int):
         super().__init__(offset, 4, 0)
         self.odr = odr_register
+        self._data_mask = data_mask
     
     def write(self, size: int, val: int) -> None:
         if size != 4:
             raise ValueError("BSRR must be accessed as 32-bit word")
         
-        set_mask = val & GPIO_DATA_MASK_16BIT
-        reset_mask = (val >> 16) & GPIO_DATA_MASK_16BIT
+        set_mask = val & self._data_mask
+        reset_mask = (val >> 16) & self._data_mask
         
         current = self.odr.read(4)
         current |= set_mask
         current &= ~reset_mask
-        self.odr.write(4, current & GPIO_DATA_MASK_16BIT)
+        self.odr.write(4, current & self._data_mask)
 
 
 class STM32GPIO(BasePeripheral):
@@ -118,20 +112,25 @@ class STM32GPIO(BasePeripheral):
     def __init__(
         self,
         cfg: Stm32GpioConfig,
+        data_mask: int,
         initial_value: int = 0,
         base_addr: int = 0,
         name: str | None = None,
     ):
-        super().__init__(name=name or "STM32GPIO", size=0x400, base_addr=base_addr)
+        super().__init__(name=name or "STM32GPIO", size=cfg.port_size, base_addr=base_addr)
         self.cfg = cfg
+        if data_mask <= 0:
+            raise ValueError("data_mask must be positive")
+        self._data_mask = data_mask
+        self._pin_count = data_mask.bit_length()
         self._registers = RegisterFile()
         
         # Create the actual register objects using config offsets
         odr = STM32OutputDataRegister(
-            cfg.offsets.odr, 4, initial_value & GPIO_DATA_MASK_16BIT
+            cfg.offsets.odr, 4, initial_value & self._data_mask
         )
-        idr = STM32InputDataRegister(cfg.offsets.idr, odr)
-        bsrr = STM32BitSetResetRegister(cfg.offsets.bsrr, odr)
+        idr = STM32InputDataRegister(cfg.offsets.idr, odr, self._data_mask)
+        bsrr = STM32BitSetResetRegister(cfg.offsets.bsrr, odr, self._data_mask)
         
         self._registers.add(odr)
         self._registers.add(idr)
@@ -151,7 +150,7 @@ class STM32GPIO(BasePeripheral):
             self._registers.write(offset, size, value)
         else:
             # Other registers use only lower 16 bits for 16-bit port
-            self._registers.write(offset, size, value & GPIO_DATA_MASK_16BIT)
+            self._registers.write(offset, size, value & self._data_mask)
     
     def reset(self) -> None:
         """Reset all registers."""
@@ -160,8 +159,8 @@ class STM32GPIO(BasePeripheral):
     # Convenience methods for testing/debugging
     def set_pin(self, pin: int, level: PinLevel) -> None:
         """Set a single pin via IDR (simulating external input)."""
-        if not (0 <= pin < 16):
-            raise ValueError(f"Invalid pin {pin}; must be 0-15")
+        if not (0 <= pin < self._pin_count):
+            raise ValueError(f"Invalid pin {pin}; must be 0-{self._pin_count - 1}")
         
         # Get current external input state (or start from ODR if none set)
         if self._idr._external_inputs is not None:
@@ -177,8 +176,8 @@ class STM32GPIO(BasePeripheral):
     
     def get_pin(self, pin: int) -> PinLevel:
         """Get the state of a pin (output)."""
-        if not (0 <= pin < 16):
-            raise ValueError(f"Invalid pin {pin}; must be 0-15")
+        if not (0 <= pin < self._pin_count):
+            raise ValueError(f"Invalid pin {pin}; must be 0-{self._pin_count - 1}")
         
         odr_val = self._odr.read(4)
         return PinLevel((odr_val >> pin) & 1)

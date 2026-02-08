@@ -177,7 +177,12 @@ def valid_simulator_config_dict():
     """
     return {
         "memory": MEMORY_CFG,
-        "gpio": {"kind": "tm4c123", "ports": GPIO_PORTS, "offsets": GPIO_OFFSETS},
+        "gpio": {
+            "kind": "tm4c123",
+            "port_size": 0x1000,
+            "ports": GPIO_PORTS,
+            "offsets": GPIO_OFFSETS,
+        },
         "sysctl": SYSCTL_CFG,
         "pins": PINS_CFG,
         "nvic": NVIC_CFG,
@@ -225,6 +230,7 @@ def minimal_simulator_config_dict():
         },
         "gpio": {
             "kind": "tm4c123",
+            "port_size": 0x1000,
             "ports": {"A": 0x40004000},
             "offsets": {
                 "data": 0x000,
@@ -272,7 +278,12 @@ def valid_stm32_config_dict():
             "bitband_periph_base": 0x42000000,
             "bitband_periph_size": 0x02000000,
         },
-        "gpio": {"kind": "stm32", "ports": STM32_GPIO_PORTS, "offsets": STM32_GPIO_OFFSETS},
+        "gpio": {
+            "kind": "stm32",
+            "port_size": 0x400,
+            "ports": STM32_GPIO_PORTS,
+            "offsets": STM32_GPIO_OFFSETS,
+        },
         "sysctl": STM32_SYSCTL,
         "pins": STM32_PINS,
         "nvic": STM32_NVIC,
