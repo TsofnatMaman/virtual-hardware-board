@@ -1,5 +1,9 @@
-"""STM32 microcontroller simulator module."""
+"""STM32 vendor implementations.
 
-from simulator.stm32.gpio import STM32_GPIO
+Contains implementations for STM32 microcontroller variants.
+"""
 
-__all__ = ["STM32GPIO"]
+from .board import STM32F4Board
+from .gpio import STM32GPIO
+
+__all__ = ["STM32F4Board", "STM32GPIO"]

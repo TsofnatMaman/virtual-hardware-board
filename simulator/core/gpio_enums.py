@@ -1,4 +1,8 @@
-"""GPIO enumeration types."""
+"""GPIO enumeration types - shared infrastructure.
+
+These enumerations define the fundamental GPIO abstractions used by all
+GPIO implementations across all boards.
+"""
 
 from enum import IntEnum
 

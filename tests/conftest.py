@@ -44,11 +44,11 @@ MEMORY_CFG = {
     "sram_size": 131072,
     "periph_base": 0x40000000,
     "periph_size": 0x00100000,
-    "bitband_base": 0x42000000,
-    "bitband_size": 0x02000000,
+    "bitband_sram_base": 0x22000000,
+    "bitband_sram_size": 0x02000000,
+    "bitband_periph_base": 0x42000000,
+    "bitband_periph_size": 0x02000000,
 }
-
-UTIL_CFG = {"mask_32bit": 0xFFFFFFFF, "mask_8bit": 0xFF}
 
 GPIO_PORTS = {
     "A": 0x40004000,
@@ -118,19 +118,9 @@ STM32_GPIO_PORTS = {
 }
 
 STM32_GPIO_OFFSETS = {
-    "data": 0x00,
-    "dir": 0x04,
-    "den": 0x08,
-    "lock": 0x1C,
-    "cr": 0x14,
-    "is": 0x28,
-    "ibe": 0x30,
-    "iev": 0x34,
-    "im": 0x38,
-    "ris": 0x3C,
-    "mis": 0x40,
-    "icr": 0x44,
-    "afsel": 0x20,
+    "idr": 0x10,
+    "odr": 0x14,
+    "bsrr": 0x18,
 }
 
 STM32_PINS = {
@@ -187,8 +177,7 @@ def valid_simulator_config_dict():
     """
     return {
         "memory": MEMORY_CFG,
-        "util": UTIL_CFG,
-        "gpio": {"ports": GPIO_PORTS, "offsets": GPIO_OFFSETS},
+        "gpio": {"kind": "tm4c123", "ports": GPIO_PORTS, "offsets": GPIO_OFFSETS},
         "sysctl": SYSCTL_CFG,
         "pins": PINS_CFG,
         "nvic": NVIC_CFG,
@@ -229,14 +218,13 @@ def minimal_simulator_config_dict():
             "sram_size": 131072,
             "periph_base": 0x40000000,
             "periph_size": 0x00100000,
-            "bitband_base": 0x42000000,
-            "bitband_size": 0x02000000,
-        },
-        "util": {
-            "mask_32bit": 0xFFFFFFFF,
-            "mask_8bit": 0xFF,
+            "bitband_sram_base": 0x22000000,
+            "bitband_sram_size": 0x02000000,
+            "bitband_periph_base": 0x42000000,
+            "bitband_periph_size": 0x02000000,
         },
         "gpio": {
+            "kind": "tm4c123",
             "ports": {"A": 0x40004000},
             "offsets": {
                 "data": 0x000,
@@ -279,11 +267,12 @@ def valid_stm32_config_dict():
             "sram_size": 192000,
             "periph_base": 0x40000000,
             "periph_size": 0x00100000,
-            "bitband_base": 0x42000000,
-            "bitband_size": 0x02000000,
+            "bitband_sram_base": 0x22000000,
+            "bitband_sram_size": 0x02000000,
+            "bitband_periph_base": 0x42000000,
+            "bitband_periph_size": 0x02000000,
         },
-        "util": UTIL_CFG,
-        "gpio": {"ports": STM32_GPIO_PORTS, "offsets": STM32_GPIO_OFFSETS},
+        "gpio": {"kind": "stm32", "ports": STM32_GPIO_PORTS, "offsets": STM32_GPIO_OFFSETS},
         "sysctl": STM32_SYSCTL,
         "pins": STM32_PINS,
         "nvic": STM32_NVIC,

@@ -1,90 +1,108 @@
-"""Board abstraction interface."""
+"""Board abstraction - behavioral contract.
+
+A Board represents a complete MCU system with CPU, memory, and peripherals.
+Every concrete board must implement this interface.
+"""
 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
-from simulator.interfaces.cpu import BaseCPU
-from simulator.interfaces.memory import BaseMemory
-from simulator.interfaces.peripheral import BasePeripherals
-from simulator.utils.config_loader import Simulator_Config
+from simulator.interfaces.clock import IClock
+from simulator.interfaces.cpu import ICPU
+from simulator.interfaces.interrupt_controller import IInterruptController
+from simulator.interfaces.memory_map import IMemoryMap
+from simulator.interfaces.peripheral import Peripheral
+from simulator.core.memmap import AddressSpace
+
+if TYPE_CHECKING:
+    from simulator.interfaces.memory_access import MemoryAccessModel
 
 
-class BaseBoard(ABC):
-    """Abstract interface for simulated embedded boards.
-
-    Responsibilities:
-    - Own and manage CPU (processor that masters memory bus)
-    - Own and manage Memory (storage for code and data)
-    - Own and manage Peripherals (GPIO, UART, Timers, etc.)
-    - Control board lifecycle (reset, power management, etc.)
-    - Expose components for observation/debugging
+class Board(ABC):
+    """Base class for MCU boards.
+    
+    Each board is a complete system: CPU, memory map, and peripherals.
+    The Board is responsible for wiring everything together.
+    
+    Every concrete board implementation (e.g., STM32F4Board, TM4C123Board)
+    must inherit from this class and implement all abstract properties.
     """
-
-    # Optional configuration payload (used by builder/factory system)
-    config: Simulator_Config | None = None
-
-    def __init__(self, config: Simulator_Config | None = None, **_kwargs: Any) -> None:
-        self.config = config
-
-    # ====== Core API (Required) ======
+    
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """Human-readable board name (e.g., 'STM32F4', 'TM4C123')."""
+        ...
+    
+    @property
+    @abstractmethod
+    def cpu(self) -> ICPU:  # Returns CortexM, but avoiding circular import
+        """The CPU instance."""
+        ...
+    
+    @property
+    @abstractmethod
+    def address_space(self) -> AddressSpace:
+        """The memory address space dispatcher."""
+        ...
 
     @property
     @abstractmethod
-    def cpu(self) -> BaseCPU:
-        """Get the board's CPU (processor that masters memory bus).
-
-        Returns:
-            BaseCPU instance managing instruction execution
-        """
-        raise NotImplementedError
+    def memory_map(self) -> IMemoryMap:
+        """Board memory map (alias for address_space)."""
+        ...
+    
+    @property
+    @abstractmethod
+    def peripherals(self) -> dict[str, Peripheral]:
+        """All registered peripherals, keyed by name."""
+        ...
 
     @property
     @abstractmethod
-    def memory(self) -> BaseMemory:
-        """Get the board's memory (storage for code and data).
-
-        Returns:
-            BaseMemory instance managing address space (FLASH, SRAM, etc.)
-        """
-        raise NotImplementedError
+    def clock(self) -> IClock:
+        """System clock (pub/sub tick source)."""
+        ...
 
     @property
     @abstractmethod
-    def peripherals(self) -> dict[str, BasePeripherals]:
-        """Get the board's peripherals (GPIO, UART, Timers, etc.).
-
-        Returns:
-            Dictionary mapping peripheral names to instances
+    def interrupt_ctrl(self) -> IInterruptController:
+        """Interrupt controller for peripheral events."""
+        ...
+    
+    @property
+    @abstractmethod
+    def memory_access_model(self) -> MemoryAccessModel:
+        """The memory access model that defines address-to-register mapping.
+        
+        Different boards have fundamentally different ways of interpreting
+        memory addresses. This property exposes the board's access semantics:
+        
+        - STM32: Direct register offset mapping
+        - TM4C123: Bit-banded addressing (address encodes bit mask)
+        
+        Use this to understand how this board's peripherals interpret addresses.
         """
-        raise NotImplementedError
-
+        ...
+    
     @abstractmethod
     def reset(self) -> None:
-        """Reset board to power-on state.
+        """Reset the entire board."""
+        ...
 
-        Resets CPU and all peripherals.
-        """
-        raise NotImplementedError
+    @abstractmethod
+    def step(self, cycles: int = 1) -> None:
+        """Advance the board by a number of cycles."""
+        ...
 
-    # ====== Optional API (Extensible) ======
+    @abstractmethod
+    def read(self, address: int, size: int = 4) -> int:
+        """Read from the board's memory map."""
+        ...
 
-    def gui_state(self) -> dict[str, Any]:
-        """Get board state for GUI or headless display.
-
-        Override this method to expose LEDs, buttons, displays, etc.
-
-        Returns:
-            Dictionary with board state (LEDs, buttons, etc.)
-        """
-        return {}
-
-    def get_name(self) -> str:
-        """Get board name for display.
-
-        Returns:
-            Human-readable board name
-        """
-
-        return "Unknown"
+    @abstractmethod
+    def write(self, address: int, size: int, value: int) -> None:
+        """Write to the board's memory map."""
+        ...

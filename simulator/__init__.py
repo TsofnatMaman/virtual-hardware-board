@@ -1,18 +1,49 @@
+"""Virtual Hardware Board Simulator.
+
+This module provides simulation of ARM Cortex-M microcontrollers (STM32, TM4C123)
+including CPU execution, memory management, and peripheral simulation.
+
+New Architecture:
+- Clean separation of concerns: CPU, memory, peripherals
+- Explicit vendor differences (no generic base classes)
+- Hardware-faithful register semantics
+- Extensible board registry
+
+Getting started:
+    from simulator import create_board
+    
+    board = create_board("stm32f4")
+    board.cpu.reset()
+    board.cpu.step()
 """
-Virtual Hardware Board Simulator package.
 
-This package provides simulation capabilities for microcontroller boards including:
-- TM4C123 (Texas Instruments Tiva C Series) - 8-pin GPIO
-- STM32 (STMicroelectronics ARM Cortex-M) - 16-pin GPIO
+# Core abstractions
+from simulator.interfaces.board import Board
+from simulator.core.board import create_board, list_available_boards, verify_boards_registered
+from simulator.core.memmap import AddressSpace, BaseMemoryMap
+from simulator.core.cpu import CortexM
+from simulator.core.clock import Clock
+from simulator.core.interrupt_controller import InterruptController
+from simulator.core.simulation_engine import SimulationEngine
 
-Architecture:
-- BaseGPIO: GPIO interface + common register and pin operations
-  ├─ TM4C123GPIO: 8-pin device-specific implementation
-  └─ STM32GPIO: 16-pin device-specific implementation
-"""
+# Board implementations (auto-registers when imported)
+from simulator.stm32 import STM32F4Board
+from simulator.tm4c import TM4C123Board
 
-from simulator.stm32.gpio import STM32_GPIO
-from simulator.tm4c123.gpio import TM4C123_GPIO
-
-__all__ = ["TM4C123GPIO", "STM32GPIO"]
-
+__all__ = [
+    # Core
+    "Board",
+    "AddressSpace",
+    "BaseMemoryMap",
+    "CortexM",
+    "Clock",
+    "InterruptController",
+    "SimulationEngine",
+    # Board creation
+    "create_board",
+    "list_available_boards",
+    "verify_boards_registered",
+    # Concrete boards
+    "STM32F4Board",
+    "TM4C123Board",
+]

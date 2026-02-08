@@ -5,14 +5,13 @@ memory:
   sram_size: 192000
   periph_base: 0x40000000
   periph_size: 0x00100000
-  bitband_base: 0x42000000
-  bitband_size: 0x02000000
-
-util:
-  mask_32bit: 0xFFFFFFFF
-  mask_8bit: 0xFF
+  bitband_sram_base: 0x22000000
+  bitband_sram_size: 0x02000000
+  bitband_periph_base: 0x42000000
+  bitband_periph_size: 0x02000000
 
 gpio:
+  kind: stm32
   ports:
     A: 0x40020000
     B: 0x40020400
@@ -22,20 +21,9 @@ gpio:
     F: 0x40021400
     G: 0x40021800
   offsets:
-    data: 0x00
-    dir: 0x04
-    den: 0x08
-    lock: 0x1C
-    cr: 0x14
-    is: 0x28
-    ibe: 0x30
-    iev: 0x34
-    im: 0x38
-    ris: 0x3C
-    mis: 0x40
-    icr: 0x44
-    afsel: 0x20
-  num_pins: 16
+    idr: 0x10
+    odr: 0x14
+    bsrr: 0x18
 
 sysctl:
   base: 0x40023800

@@ -1,38 +1,32 @@
-"""CPU abstraction interface."""
+"""CPU interface for board integration."""
 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
-from simulator.interfaces.memory import BaseMemory
+if TYPE_CHECKING:
+    from simulator.interfaces.interrupt_controller import InterruptEvent
 
 
-class BaseCPU(ABC):
-    """Abstract interface for simulated processors.
-
-    Responsibilities:
-    - Fetch instructions from memory
-    - Execute instructions
-    - Manage CPU state (registers, program counter, etc.)
-    - Read/write data via memory bus
-    """
-
-    @property
-    @abstractmethod
-    def memory(self) -> BaseMemory:
-        """Get the CPU's memory bus.
-
-        Returns:
-            BaseMemory instance for instruction/data access
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def reset(self) -> None:
-        """Reset CPU to power-on state."""
-        raise NotImplementedError
+class ICPU(ABC):
+    """CPU abstraction used by boards and the simulation engine."""
 
     @abstractmethod
     def step(self) -> None:
-        """Execute one instruction cycle."""
-        raise NotImplementedError
+        """Execute a single instruction."""
+        ...
+
+    @abstractmethod
+    def reset(self) -> None:
+        """Reset CPU state."""
+        ...
+
+    def tick(self, cycles: int = 1) -> None:
+        """Advance CPU by the given number of cycles (default: step cycles)."""
+        for _ in range(cycles):
+            self.step()
+
+    def handle_interrupt(self, _event: "InterruptEvent") -> None:
+        """Handle an interrupt event (default: no-op)."""
+        return None
