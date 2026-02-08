@@ -9,32 +9,33 @@ Core infrastructure for board-agnostic functionality:
 - board: Board registry and factory (infrastructure; Board ABC is in interfaces)
 """
 
-# New architecture
-from simulator.core.register import (
-    Register,
-    SimpleRegister,
-    ReadOnlyRegister,
-    WriteOnlyRegister,
-    RegisterFile,
-    RegisterDescriptor,
-)
 from simulator.core.address_space import (
     AddressRange,
-    MemoryRegion,
-    FlashMemory,
-    RamMemory,
     BitBandRegion,
+    FlashMemory,
+    MemoryRegion,
     PeripheralWindow,
+    RamMemory,
 )
-from simulator.core.memmap import AddressSpace, BaseMemoryMap, PeripheralMapping
-from simulator.core.cpu import CortexM, UnicornEngine
-from simulator.core.clock import Clock
-from simulator.core.interrupt_controller import InterruptController
-from simulator.core.peripheral import BasePeripheral
-from simulator.core.sysctl import SysCtl
-from simulator.core.simulation_engine import SimulationEngine
-from simulator.core.gpio_enums import PinLevel, PinMode
 from simulator.core.board import BoardRegistry, create_board, list_available_boards
+from simulator.core.clock import Clock
+from simulator.core.cpu import CortexM, UnicornEngine
+from simulator.core.gpio_enums import PinLevel, PinMode
+from simulator.core.interrupt_controller import InterruptController
+from simulator.core.memmap import AddressSpace, BaseMemoryMap, PeripheralMapping
+from simulator.core.peripheral import BasePeripheral
+
+# New architecture
+from simulator.core.register import (
+    ReadOnlyRegister,
+    Register,
+    RegisterDescriptor,
+    RegisterFile,
+    SimpleRegister,
+    WriteOnlyRegister,
+)
+from simulator.core.simulation_engine import SimulationEngine
+from simulator.core.sysctl import SysCtl
 
 __all__ = [
     # Register abstractions

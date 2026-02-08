@@ -1,4 +1,7 @@
-from simulator.core.builders import create_address_space_from_config, create_cpu_for_address_space
+from simulator.core.builders import (
+    create_address_space_from_config,
+    create_cpu_for_address_space,
+)
 from simulator.core.memmap import AddressSpace
 from simulator.utils.config_loader import load_config
 

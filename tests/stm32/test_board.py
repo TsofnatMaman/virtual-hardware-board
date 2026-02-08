@@ -1,5 +1,6 @@
-import pytest
 from dataclasses import replace
+
+import pytest
 
 from simulator.stm32.board import STM32F4Board
 

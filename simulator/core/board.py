@@ -18,33 +18,35 @@ if TYPE_CHECKING:
 
 class BoardRegistry:
     """Registry of available board implementations.
-    
+
     This decouples board discovery from board implementation, making it
     easy to add new boards without modifying board classes.
-    
+
     THREAD SAFETY: Not thread-safe. All board registration should happen
     during module initialization before any threads are spawned.
     """
-    
+
     def __init__(self):
         self._boards: dict[str, Type[Board]] = {}
-    
+
     def register(self, name: str, board_class: Type[Board]) -> None:
         """Register a board implementation."""
         if name in self._boards:
             raise ValueError(f"Board '{name}' already registered")
         self._boards[name] = board_class
-    
+
     def get(self, name: str) -> Type[Board]:
         """Get a board class by name."""
         if name not in self._boards:
-            raise ValueError(f"Unknown board '{name}'. Available: {list(self._boards.keys())}")
+            raise ValueError(
+                f"Unknown board '{name}'. Available: {list(self._boards.keys())}"
+            )
         return self._boards[name]
-    
+
     def list_boards(self) -> list[str]:
         """List all registered board names."""
         return list(self._boards.keys())
-    
+
     def create(self, name: str, **kwargs) -> Any:
         """Instantiate a board by name."""
         board_class = self.get(name)
@@ -55,7 +57,9 @@ class BoardRegistry:
 _REGISTRY = BoardRegistry()
 
 
-def register_board(name: str, board_class: Type[Board]) -> None:  # Board in quotes due to TYPE_CHECKING
+def register_board(
+    name: str, board_class: Type[Board]
+) -> None:  # Board in quotes due to TYPE_CHECKING
     """Register a board globally."""
     _REGISTRY.register(name, board_class)
 
@@ -77,10 +81,10 @@ def list_available_boards() -> list[str]:
 
 def verify_boards_registered() -> None:
     """Verify that at least one board is registered.
-    
+
     This is a diagnostic function to catch import/registration issues.
     Call this early in application startup if using boards dynamically.
-    
+
     Raises:
         RuntimeError: If no boards are registered
     """

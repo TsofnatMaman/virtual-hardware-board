@@ -1,6 +1,12 @@
 import pytest
 
-from simulator.core.address_space import AddressRange, BitBandRegion, FlashMemory, PeripheralWindow, RamMemory
+from simulator.core.address_space import (
+    AddressRange,
+    BitBandRegion,
+    FlashMemory,
+    PeripheralWindow,
+    RamMemory,
+)
 from simulator.core.exceptions import MemoryAccessError, MemoryAlignmentError
 from simulator.core.memmap import AddressSpace
 
@@ -148,12 +154,16 @@ def test_flash_write_path_return_line():
     class WritableFlash(FlashMemory):
         def write(self, address: int, size: int, value: int) -> None:
             # Allow writes for testing the return path
-            self._data[address - self.base:address - self.base + size] = value.to_bytes(size, "little")
+            self._data[address - self.base : address - self.base + size] = (
+                value.to_bytes(size, "little")
+            )
 
     flash = WritableFlash(AddressRange(0x00000000, 0x100))
     sram = RamMemory(AddressRange(0x20000000, 0x100))
     mmio = PeripheralWindow(AddressRange(0x40000000, 0x100))
-    bitband = BitBandRegion(AddressRange(0x22000000, 0x20), AddressRange(0x20000000, 0x100), False)
+    bitband = BitBandRegion(
+        AddressRange(0x22000000, 0x20), AddressRange(0x20000000, 0x100), False
+    )
     addr_space = AddressSpace(flash, sram, mmio, [bitband])
 
     addr_space.write(0x00000000, 4, 0xAABBCCDD)

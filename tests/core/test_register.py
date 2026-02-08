@@ -1,9 +1,9 @@
 import pytest
 
 from simulator.core.register import (
+    ReadOnlyRegister,
     RegisterDescriptor,
     RegisterFile,
-    ReadOnlyRegister,
     SimpleRegister,
     WriteOnlyRegister,
 )

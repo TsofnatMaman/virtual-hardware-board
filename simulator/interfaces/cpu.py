@@ -41,6 +41,7 @@ class ICPU(ABC):
 @dataclass(frozen=True)
 class RegisterValue:
     """Single register value for UI/debug panels."""
+
     name: str
     value: int
     group: str = "core"
@@ -49,5 +50,6 @@ class RegisterValue:
 @dataclass(frozen=True)
 class CpuSnapshot:
     """Snapshot of CPU state for UI/debug panels."""
+
     registers: Iterable[RegisterValue]
     flags: Mapping[str, bool]

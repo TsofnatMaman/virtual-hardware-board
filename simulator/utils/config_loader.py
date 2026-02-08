@@ -1,9 +1,9 @@
 """Helpers for loading and validating simulator board configuration."""
 
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional, Literal, Union
-import threading
+from typing import Any, Literal, Optional, Union
 
 import yaml  # type: ignore[import-untyped]
 
@@ -212,13 +212,21 @@ def _validate_memory_config(mem: MemoryConfig) -> None:
         raise ConfigurationError("peripheral window overlaps sram")
 
     # Bit-band aliases must not overlap core memory windows
-    if overlaps(mem.bitband_sram_base, mem.bitband_sram_size, mem.flash_base, mem.flash_size):
+    if overlaps(
+        mem.bitband_sram_base, mem.bitband_sram_size, mem.flash_base, mem.flash_size
+    ):
         raise ConfigurationError("SRAM bit-band alias overlaps flash")
-    if overlaps(mem.bitband_sram_base, mem.bitband_sram_size, mem.sram_base, mem.sram_size):
+    if overlaps(
+        mem.bitband_sram_base, mem.bitband_sram_size, mem.sram_base, mem.sram_size
+    ):
         raise ConfigurationError("SRAM bit-band alias overlaps SRAM window")
-    if overlaps(mem.bitband_periph_base, mem.bitband_periph_size, mem.flash_base, mem.flash_size):
+    if overlaps(
+        mem.bitband_periph_base, mem.bitband_periph_size, mem.flash_base, mem.flash_size
+    ):
         raise ConfigurationError("Peripheral bit-band alias overlaps flash")
-    if overlaps(mem.bitband_periph_base, mem.bitband_periph_size, mem.sram_base, mem.sram_size):
+    if overlaps(
+        mem.bitband_periph_base, mem.bitband_periph_size, mem.sram_base, mem.sram_size
+    ):
         raise ConfigurationError("Peripheral bit-band alias overlaps SRAM")
 
     # Alias windows may be larger than the actual underlying regions; bounds are
@@ -230,7 +238,8 @@ def load_config(board_name: str, path: Optional[str] = None) -> SimulatorConfig:
 
     Args:
         board_name: Board identifier (e.g., 'stm32', 'tm4c123') for config lookup.
-        path: Optional path to YAML config. If None, load bundled simulator/{board_name}/config.yaml.
+        path: Optional path to YAML config. If None, load bundled
+            simulator/{board_name}/config.yaml.
 
     Returns:
         SimulatorConfig instance
@@ -250,7 +259,7 @@ def get_config(board_name: str) -> SimulatorConfig:
 
     Configs are cached per board_name; repeated calls for the same board
     return the cached instance without re-reading the YAML file.
-    
+
     THREAD SAFETY: This function is thread-safe. Multiple threads can
     safely call this concurrently.
     """
@@ -262,7 +271,7 @@ def get_config(board_name: str) -> SimulatorConfig:
 
 def clear_config_cache() -> None:
     """Clear all cached configurations.
-    
+
     Useful for testing or resetting state between board resets.
     All subsequent calls to get_config() will reload from disk.
     """

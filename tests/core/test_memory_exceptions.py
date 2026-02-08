@@ -4,8 +4,8 @@ from simulator.core.exceptions import (
     MemoryAccessError,
     MemoryAlignmentError,
     MemoryBoundsError,
-    MemoryPermissionError,
     MemoryException,
+    MemoryPermissionError,
     SimulatorError,
 )
 

@@ -1,7 +1,7 @@
 import pytest
 
+from simulator.core.gpio_enums import PinLevel, PinMode
 from simulator.tm4c import TM4C123GPIO
-from simulator.core.gpio_enums import PinMode, PinLevel
 from simulator.utils.config_loader import load_config
 
 

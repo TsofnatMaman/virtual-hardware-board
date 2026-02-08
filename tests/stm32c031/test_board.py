@@ -1,5 +1,6 @@
-import pytest
 from dataclasses import replace
+
+import pytest
 
 from simulator.stm32c031.board import STM32C031Board
 

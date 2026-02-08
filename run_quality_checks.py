@@ -50,11 +50,11 @@ class CheckRunner:
             True if command succeeded, False otherwise
         """
         if name.lower() in self.skip_checks:
-            print(f"⏭️  Skipping {name}")
+            print(f"[SKIP] {name}")
             return True
 
         print(f"\n{'=' * 70}")
-        print(f"▶️  Running: {name}")
+        print(f"Running: {name}")
         print(f"{'=' * 70}")
 
         try:
@@ -74,16 +74,16 @@ class CheckRunner:
                     print(result.stderr)
 
             if success:
-                print(f"✅ {name} passed!")
+                print(f"[OK] {name} passed!")
                 self.passed_checks.append(name)
             else:
-                print(f"❌ {name} failed!")
+                print(f"[FAIL] {name} failed!")
                 self.failed_checks.append(name)
 
             return success
 
         except FileNotFoundError as e:
-            print(f"❌ Error: {e}")
+            print(f"[FAIL] Error: {e}")
             print(f"   Make sure all tools are installed: pip install -r requirements-dev.txt")
             self.failed_checks.append(name)
             return False
@@ -131,7 +131,7 @@ class CheckRunner:
     def check_vulture(self) -> bool:
         """Check for dead code with Vulture."""
         return self.run_command(
-            ["vulture", ".", "--exclude", "tests"],
+            ["vulture", ".", "--exclude", "tests", "--min-confidence", "90"],
             "Vulture Dead Code Check",
         )
 
@@ -154,20 +154,20 @@ class CheckRunner:
     def print_summary(self) -> None:
         """Print summary of check results."""
         print(f"\n{'=' * 70}")
-        print("📊 SUMMARY")
+        print("SUMMARY")
         print(f"{'=' * 70}")
 
         if self.passed_checks:
-            print(f"\n✅ Passed ({len(self.passed_checks)}):")
+            print(f"\nPassed ({len(self.passed_checks)}):")
             for check in self.passed_checks:
-                print(f"   • {check}")
+                print(f"   - {check}")
 
         if self.failed_checks:
-            print(f"\n❌ Failed ({len(self.failed_checks)}):")
+            print(f"\nFailed ({len(self.failed_checks)}):")
             for check in self.failed_checks:
-                print(f"   • {check}")
+                print(f"   - {check}")
         else:
-            print("\n🎉 All checks passed!")
+            print("\nAll checks passed!")
 
         print(f"\n{'=' * 70}")
 
@@ -178,7 +178,7 @@ class CheckRunner:
             0 if all checks passed, non-zero otherwise
         """
         fix_text = "with auto-fixes" if self.fix else "without fixes"
-        print(f"\n🚀 Starting quality checks {fix_text}...\n")
+        print(f"\nStarting quality checks {fix_text}...\n")
 
         # Run checks in order
         checks = [

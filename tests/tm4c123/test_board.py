@@ -1,5 +1,6 @@
-import pytest
 from dataclasses import replace
+
+import pytest
 
 from simulator.tm4c.board import TM4C123Board
 

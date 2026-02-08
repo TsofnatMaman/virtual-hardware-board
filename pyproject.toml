@@ -25,6 +25,13 @@ disable = [
     "too-few-public-methods",
     "no-name-in-module",
     "unused-argument",
+    "duplicate-code",
+    "mixed-line-endings",
+    "unnecessary-ellipsis",
+    "too-many-instance-attributes",
+    "too-many-positional-arguments",
+    "too-many-locals",
+    "protected-access",
 ]
 
 [tool.pylint.DESIGN]

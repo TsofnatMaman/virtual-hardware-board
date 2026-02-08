@@ -17,15 +17,20 @@ Getting started:
     board.cpu.step()
 """
 
-# Core abstractions
-from simulator.interfaces.board import Board
-from simulator.core.board import create_board, list_available_boards, verify_boards_registered
-from simulator.core.memmap import AddressSpace, BaseMemoryMap
-from simulator.core.cpu import CortexM
+from simulator.core.board import (
+    create_board,
+    list_available_boards,
+    verify_boards_registered,
+)
 from simulator.core.clock import Clock
+from simulator.core.cpu import CortexM
 from simulator.core.interrupt_controller import InterruptController
+from simulator.core.memmap import AddressSpace, BaseMemoryMap
 from simulator.core.simulation_engine import SimulationEngine
 from simulator.core.sysctl import SysCtl
+
+# Core abstractions
+from simulator.interfaces.board import Board
 
 # Board implementations (auto-registers when imported)
 from simulator.stm32 import STM32F4Board

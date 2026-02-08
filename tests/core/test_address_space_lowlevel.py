@@ -85,7 +85,9 @@ def test_bitband_translate_and_errors():
 
 
 def test_bitband_and_peripheral_window_read_write_raise():
-    bb = BitBandRegion(AddressRange(0x22000000, 0x20), AddressRange(0x20000000, 0x20), False)
+    bb = BitBandRegion(
+        AddressRange(0x22000000, 0x20), AddressRange(0x20000000, 0x20), False
+    )
     with pytest.raises(RuntimeError):
         bb.read(0x22000000, 4)
     with pytest.raises(RuntimeError):

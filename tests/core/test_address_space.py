@@ -1,8 +1,8 @@
 import pytest
 
 from simulator.core.builders import create_address_space_from_config
-from simulator.core.memmap import BaseMemoryMap
 from simulator.core.exceptions import MemoryAccessError, MemoryBoundsError
+from simulator.core.memmap import BaseMemoryMap
 from simulator.utils.config_loader import load_config
 
 

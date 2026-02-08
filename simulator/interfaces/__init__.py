@@ -7,14 +7,17 @@ Defines behavioral contracts that all implementations must satisfy:
 - PinLevel, PinMode: GPIO enumerations (re-exported from core for convenience)
 """
 
+from simulator.core.gpio_enums import PinLevel, PinMode
 from simulator.interfaces.board import Board
+from simulator.interfaces.clock import ClockSubscriber, IClock
 from simulator.interfaces.cpu import ICPU, CpuSnapshot, RegisterValue
-from simulator.interfaces.clock import IClock, ClockSubscriber
-from simulator.interfaces.interrupt_controller import IInterruptController, InterruptEvent
+from simulator.interfaces.interrupt_controller import (
+    IInterruptController,
+    InterruptEvent,
+)
+from simulator.interfaces.memory_access import MemoryAccessModel
 from simulator.interfaces.memory_map import IMemoryMap
 from simulator.interfaces.peripheral import Peripheral
-from simulator.interfaces.memory_access import MemoryAccessModel
-from simulator.core.gpio_enums import PinLevel, PinMode
 
 __all__ = [
     "Board",

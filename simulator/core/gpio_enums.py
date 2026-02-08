@@ -9,7 +9,7 @@ from enum import IntEnum
 
 class PinMode(IntEnum):
     """GPIO pin mode enumeration.
-    
+
     Defines the operational mode for a GPIO pin, such as input, output,
     or alternative function modes.
     """
@@ -32,7 +32,7 @@ class PinMode(IntEnum):
 
 class PinLevel(IntEnum):
     """GPIO pin logic level enumeration.
-    
+
     Represents the digital logic level on a GPIO pin.
     """
 

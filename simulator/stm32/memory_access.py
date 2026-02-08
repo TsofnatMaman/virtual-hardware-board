@@ -23,13 +23,13 @@ from simulator.interfaces.memory_access import MemoryAccessModel
 
 class STM32F4DirectAccessModel(MemoryAccessModel):
     """Direct register offset mapping for STM32F4 GPIO.
-    
+
     In this model, address directly selects a register:
         register = (address - gpio_base) & 0xFF
-    
+
     This is the simplest and most common pattern for ARM Cortex-M MCUs.
     """
-    
+
     # Register offset mappings (from STM32F4 datasheet)
     _REGISTERS = {
         0x00: "MODER",
@@ -43,45 +43,45 @@ class STM32F4DirectAccessModel(MemoryAccessModel):
         0x20: "AFRL",
         0x24: "AFRH",
     }
-    
+
     _ADDRESSES = {v: k for k, v in _REGISTERS.items()}
-    
+
     def __init__(self, gpio_base: int):
         """Initialize with GPIO port base address.
-        
+
         Args:
             gpio_base: Base address of GPIO port (e.g., 0x40020000 for GPIOA)
         """
         self.gpio_base = gpio_base
-    
+
     def decode_register_access(self, address: int, size: int) -> tuple[str, int] | None:
         """Map address to register offset.
-        
+
         Args:
             address: Full 32-bit memory address
             size: Access size (ignored for direct mapping)
-        
+
         Returns:
             (register_name, offset_within_register) if valid, None otherwise
         """
         if address < self.gpio_base or address >= self.gpio_base + 0x100:
             return None
-        
+
         offset = address - self.gpio_base
         reg_offset = offset & 0xFF  # Keep only register offset
-        
+
         if reg_offset not in self._REGISTERS:
             return None
-        
+
         register_name = self._REGISTERS[reg_offset]
         return (register_name, offset)
-    
+
     def encode_register_address(self, register_name: str) -> int:
         """Convert register name to absolute address."""
         if register_name not in self._ADDRESSES:
             raise ValueError(f"Unknown register: {register_name}")
         return self.gpio_base + self._ADDRESSES[register_name]
-    
+
     @property
     def description(self) -> str:
         """Human-readable description of this access model."""
@@ -91,4 +91,3 @@ class STM32F4DirectAccessModel(MemoryAccessModel):
             f"  Pattern: address selects register directly\n"
             f"  Example: 0x{self.gpio_base + 0x14:08X} → ODR (output data)"
         )
-

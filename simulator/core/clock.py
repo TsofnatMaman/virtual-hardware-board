@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import List
 
-from simulator.interfaces.clock import IClock, ClockSubscriber
+from simulator.interfaces.clock import ClockSubscriber, IClock
 
 
 class Clock(IClock):

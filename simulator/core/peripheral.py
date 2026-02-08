@@ -33,6 +33,18 @@ class BasePeripheral:
         """Advance internal time. Default is no-op."""
         _ = cycles
 
+    def read(self, offset: int, size: int) -> int:
+        """Read from a peripheral register (override in subclasses)."""
+        raise NotImplementedError("read() must be implemented by subclasses")
+
+    def write(self, offset: int, size: int, value: int) -> None:
+        """Write to a peripheral register (override in subclasses)."""
+        raise NotImplementedError("write() must be implemented by subclasses")
+
+    def reset(self) -> None:
+        """Reset peripheral state (override in subclasses)."""
+        raise NotImplementedError("reset() must be implemented by subclasses")
+
     def read_register(self, offset: int, size: int) -> int:
         """Alias for read() using register terminology."""
         return self.read(offset, size)

@@ -37,4 +37,3 @@ def align_to_page(size: int) -> int:
     """
     page = ConstUtils.UNICORN_PAGE_SIZE
     return ((size + page - 1) // page) * page
-

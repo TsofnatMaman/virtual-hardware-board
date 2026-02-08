@@ -1,7 +1,13 @@
 import pytest
 
 from simulator.core import cpu as cpu_mod
-from simulator.core.address_space import AddressRange, FlashMemory, PeripheralWindow, RamMemory, BitBandRegion
+from simulator.core.address_space import (
+    AddressRange,
+    BitBandRegion,
+    FlashMemory,
+    PeripheralWindow,
+    RamMemory,
+)
 from simulator.core.memmap import AddressSpace
 
 
@@ -66,7 +72,9 @@ def _make_address_space() -> AddressSpace:
     flash = FlashMemory(AddressRange(0x08000000, 0x100))
     sram = RamMemory(AddressRange(0x20000000, 0x100))
     mmio = PeripheralWindow(AddressRange(0x40000000, 0x100))
-    bitband = BitBandRegion(AddressRange(0x22000000, 0x20), AddressRange(0x20000000, 0x100), False)
+    bitband = BitBandRegion(
+        AddressRange(0x22000000, 0x20), AddressRange(0x20000000, 0x100), False
+    )
     return AddressSpace(flash, sram, mmio, [bitband])
 
 

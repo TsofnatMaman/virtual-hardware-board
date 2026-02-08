@@ -6,17 +6,20 @@ Wires together:
 - STM32 GPIO peripherals
 """
 
-from typing import Any
 from pathlib import Path
+from typing import Any
 
+from simulator.core.builders import (
+    create_address_space_from_config,
+    create_cpu_for_address_space,
+)
+from simulator.core.clock import Clock
+from simulator.core.cpu import CortexM
+from simulator.core.interrupt_controller import InterruptController
+from simulator.core.memmap import AddressSpace
+from simulator.core.sysctl import SysCtl
 from simulator.interfaces.board import Board
 from simulator.interfaces.memory_access import MemoryAccessModel
-from simulator.core.memmap import AddressSpace
-from simulator.core.cpu import CortexM
-from simulator.core.clock import Clock
-from simulator.core.interrupt_controller import InterruptController
-from simulator.core.sysctl import SysCtl
-from simulator.core.builders import create_address_space_from_config, create_cpu_for_address_space
 from simulator.interfaces.peripheral import Peripheral
 from simulator.stm32.gpio import STM32GPIO
 from simulator.stm32.memory_access import STM32F4DirectAccessModel
@@ -39,7 +42,9 @@ class STM32C031Board(Board):
         self._cpu = create_cpu_for_address_space(self._address_space)
 
         # Memory access model for this board's peripherals
-        gpio_base = list(config.gpio.ports.values())[0] if config.gpio.ports else 0x50000000
+        gpio_base = (
+            list(config.gpio.ports.values())[0] if config.gpio.ports else 0x50000000
+        )
         self._memory_access_model = STM32F4DirectAccessModel(gpio_base)
 
         # Core timing + interrupt infrastructure
