@@ -25,7 +25,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-          pip install black pylint mypy isort radon vulture pytest pytest-cov pyyaml
 
       - name: Run quality checks and tests
         run: python run_quality_checks.py

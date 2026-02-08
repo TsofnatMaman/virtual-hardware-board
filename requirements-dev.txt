@@ -6,10 +6,14 @@ pytest>=7.0
 pytest-cov>=7.0
 
 # Code quality
-black>=23.0
+black>=24.10.0,<25
 flake8>=6.0
 isort>=5.0
 mypy>=1.0
 
 # Linting
 pylint>=2.0
+
+# Complexity + dead code
+radon>=6.0
+vulture>=2.0
