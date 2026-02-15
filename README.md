@@ -18,5 +18,12 @@ pip install -r requirements-gui.txt
 python examples/run_gui.py
 
 # or run directly
-python -m simulator_gui --board tm4c123 --firmware firmware/led_blink/tm4c/firmware.bin
+python -m simulator_gui --board tm4c123 --firmware examples/led_blink/tm4c/firmware.bin
 ```
+
+## USB CMSIS-DAP (WIP)
+
+See `docs/usb_cmsis_dap.md`.
+
+Note: when using an external debugger (Keil/USB), run the debug server without
+`--firmware` and let the debugger download the program.

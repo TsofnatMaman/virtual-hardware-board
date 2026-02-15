@@ -14,7 +14,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run TM4C123 LED blink firmware.")
     parser.add_argument(
         "--firmware",
-        default="firmware/led_blink/tm4c/firmware.bin",
+        default="examples/led_blink/tm4c/firmware.bin",
         help="Path to firmware.bin",
     )
     parser.add_argument(
