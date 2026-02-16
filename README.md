@@ -74,6 +74,28 @@ vector table like real hardware reset.
 For VS Code, create `.vscode/launch.json` with a `cppdbg` or Cortex-Debug
 configuration that points to `127.0.0.1:3333`.
 
+### Keil µVision (CMSIS-DAP, WIP, Windows)
+
+Keil is bridged through a virtual CMSIS-DAP HID device:
+`Keil -> virtual HID driver -> tools/cmsis_dap_proxy -> JSON debug server -> simulator`.
+Run the JSON server without `--firmware` and let the debugger download the program:
+
+```bash
+python -m simulator.debug.server --board tm4c123          # GUI + debug server
+python -m simulator.debug.server --board tm4c123 --no-gui # headless
+```
+
+See `tools/cmsis_dap_proxy/README.md` and `tools/cmsis_dap_vhid/README.md`.
+The virtual HID driver is not implemented yet.
+
+### Shared debug layer
+
+GDB and Keil use the same `simulator.debug.DebugSession` (step/run/halt,
+registers, memory, breakpoints, reset-after-flash-write). `GdbTarget` (GDB
+protocol) and `DebugServer` (JSON for the CMSIS-DAP proxy) are thin adapters.
+When `--gdb-port` is used with the GUI, the debugger owns the clock and the GUI
+only repaints.
+
 ### VS Code step-by-step (C firmware + visual simulator)
 
 1. Build firmware + ELF:

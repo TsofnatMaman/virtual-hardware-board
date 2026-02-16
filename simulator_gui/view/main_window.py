@@ -21,6 +21,7 @@ class MainWindow(QtWidgets.QMainWindow):
         components: list[ComponentInstance],
         cycles_per_tick: int = 1000,
         tick_ms: int = 16,
+        external_clock: bool = False,
     ):
         super().__init__()
         self._controller = controller
@@ -54,7 +55,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self._timer.timeout.connect(self._tick)
         self._timer.start(tick_ms)
 
-        self._controller.set_running(True)
+        if external_clock:
+            self._controller.set_external(True)
+        else:
+            self._controller.set_running(True)
         self._top_bar.set_state(self._controller.state)
 
     def _tick(self) -> None:

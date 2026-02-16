@@ -14,6 +14,7 @@ from pathlib import Path
 
 from simulator import create_board
 from simulator.core.exceptions import SimulatorError
+from simulator.debug.session import DebugSession
 from simulator.interfaces.board import Board
 
 _SIGNAL_TRAP = "S05"
@@ -22,83 +23,62 @@ _STOP_REPLY = "T05thread:1;"
 
 @dataclass
 class GdbTarget:
-    """Wrap a board and expose debugger-friendly primitives."""
+    """GDB-facing adapter over the shared :class:`DebugSession`."""
 
     board: Board
     max_continue_steps: int = 250_000
-    breakpoints: set[int] = field(default_factory=set)
-    _needs_reset: bool = False
+    lock: threading.RLock | None = None
+    session: DebugSession = field(init=False)
 
-    def _canonical_pc(self, value: int) -> int:
-        return value & 0xFFFFFFFE
+    def __post_init__(self) -> None:
+        self.session = DebugSession(self.board, lock=self.lock)
+
+    @property
+    def breakpoints(self) -> set[int]:
+        return self.session.breakpoints
+
+    @property
+    def _needs_reset(self) -> bool:
+        return self.session.needs_reset
 
     def read_registers(self) -> bytes:
-        regs = [self.board.cpu.get_register(i) & 0xFFFFFFFF for i in range(16)]
-        snapshot = self.board.cpu.get_snapshot()
-        xpsr = next((r.value for r in snapshot.registers if r.name == "XPSR"), 0)
-        regs.append(xpsr & 0xFFFFFFFF)
-        return b"".join(value.to_bytes(4, "little") for value in regs)
+        values = self.session.read_core_registers()
+        return b"".join(value.to_bytes(4, "little") for value in values)
 
     def write_registers(self, payload: bytes) -> bool:
         if len(payload) < 17 * 4:
             return False
         for idx in range(16):
             value = int.from_bytes(payload[idx * 4 : (idx + 1) * 4], "little")
-            self.board.cpu.set_register(idx, value)
+            self.session.write_register(idx, value)
         return True
 
     def read_memory(self, address: int, length: int) -> bytes | None:
-        data = bytearray()
-        for offset in range(length):
-            try:
-                data.append(self.board.read(address + offset, 1))
-            except (SimulatorError, ValueError):
-                return None
-        return bytes(data)
+        try:
+            return self.session.read_memory(address, length)
+        except (SimulatorError, ValueError):
+            return None
 
     def write_memory(self, address: int, data: bytes) -> bool:
-        for offset, byte in enumerate(data):
-            try:
-                self.board.write(address + offset, 1, byte)
-            except (SimulatorError, ValueError):
-                return False
-        self._mark_reset_needed_if_flash_write(address, len(data))
+        try:
+            self.session.write_memory(address, data)
+        except (SimulatorError, ValueError):
+            return False
         return True
 
-    def _mark_reset_needed_if_flash_write(self, address: int, length: int) -> None:
-        flash = self.board.address_space.flash
-        write_start = address
-        write_end = address + max(length - 1, 0)
-        flash_start = flash.base
-        flash_end = flash.base + flash.size - 1
-        if write_start <= flash_end and write_end >= flash_start:
-            self._needs_reset = True
-
     def restart(self) -> str:
-        self.board.reset()
-        self._needs_reset = False
+        self.session.reset()
         return _SIGNAL_TRAP
 
-    def _ensure_runtime_reset(self) -> None:
-        if self._needs_reset:
-            self.board.reset()
-            self._needs_reset = False
-
     def set_pc(self, address: int) -> None:
-        self.board.cpu.set_register(15, address | 1)
+        self.session.set_pc(address)
 
     def step(self) -> str:
-        self._ensure_runtime_reset()
-        self.board.step(1)
+        self.session.step()
         return _SIGNAL_TRAP
 
     def cont(self) -> str:
-        self._ensure_runtime_reset()
-        for _ in range(self.max_continue_steps):
-            pc = self._canonical_pc(self.board.cpu.get_register(15))
-            if pc in self.breakpoints:
-                return _STOP_REPLY
-            self.board.step(1)
+        self.session.run(max_steps=self.max_continue_steps)
         return _STOP_REPLY
 
 

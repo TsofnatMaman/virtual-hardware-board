@@ -19,6 +19,7 @@ except Exception:  # pragma: no cover - optional dependency
 class SimulationState(Enum):
     RUNNING = auto()
     PAUSED = auto()
+    EXTERNAL = auto()
 
 
 @dataclass
@@ -65,6 +66,12 @@ class SimulationController:
 
     def set_running(self, running: bool) -> None:
         self._state = SimulationState.RUNNING if running else SimulationState.PAUSED
+
+    def set_external(self, external: bool) -> None:
+        if external:
+            self._state = SimulationState.EXTERNAL
+        elif self._state == SimulationState.EXTERNAL:
+            self._state = SimulationState.PAUSED
 
     def reset(self) -> None:
         self._backend.reset()
