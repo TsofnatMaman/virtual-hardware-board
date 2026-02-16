@@ -20,6 +20,7 @@ Getting started:
 from simulator.core.board import (
     create_board,
     list_available_boards,
+    register_board,
     verify_boards_registered,
 )
 from simulator.core.clock import Clock
@@ -36,6 +37,11 @@ from simulator.interfaces.board import Board
 from simulator.stm32 import STM32F4Board
 from simulator.stm32c031 import STM32C031Board
 from simulator.tm4c import TM4C123Board
+
+# Register default boards for factory lookup.
+register_board("stm32f4", STM32F4Board)
+register_board("stm32c031", STM32C031Board)
+register_board("tm4c123", TM4C123Board)
 
 __all__ = [
     # Core

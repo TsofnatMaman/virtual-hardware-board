@@ -22,4 +22,10 @@ class TopBar(QtWidgets.QFrame):
         layout.addWidget(self._state_label)
 
     def set_state(self, state: SimulationState) -> None:
-        self._state_label.setText("Running" if state == SimulationState.RUNNING else "Paused")
+        if state == SimulationState.RUNNING:
+            label = "Running"
+        elif state == SimulationState.EXTERNAL:
+            label = "External"
+        else:
+            label = "Paused"
+        self._state_label.setText(label)

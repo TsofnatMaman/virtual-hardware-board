@@ -27,3 +27,6 @@ See `docs/usb_cmsis_dap.md`.
 
 Note: when using an external debugger (Keil/USB), run the debug server without
 `--firmware` and let the debugger download the program.
+
+Example (launches GUI + debug server):
+`python -m simulator.debug.server --board tm4c123`
