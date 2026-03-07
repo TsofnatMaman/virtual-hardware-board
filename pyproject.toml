@@ -1,3 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "virtual-hardware-board"
+version = "0.1.0"
+description = "Cortex-M virtual hardware board simulator with board-specific peripherals"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "PyYAML>=6.0",
+    "unicorn",
+]
+
+[project.optional-dependencies]
+gui = [
+    "PySide6",
+    "psutil",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=7.0",
+    "black>=24.10.0,<25",
+    "flake8>=6.0",
+    "isort>=5.0",
+    "mypy>=1.0",
+    "pylint>=2.0",
+    "radon>=6.0",
+    "vulture>=2.0",
+]
+
 [tool.isort]
 profile = "black"
 line_length = 88
