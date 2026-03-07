@@ -27,7 +27,7 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Run quality checks and tests
-        run: python run_quality_checks.py
+        run: python utils/run_quality_checks.py
 
       - name: Send coverage to Codacy
         env:
