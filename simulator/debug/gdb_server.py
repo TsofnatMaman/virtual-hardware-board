@@ -33,8 +33,7 @@ class GdbTarget:
         regs = [self.board.cpu.get_register(i) & 0xFFFFFFFF for i in range(16)]
         snapshot = self.board.cpu.get_snapshot()
         xpsr = next((r.value for r in snapshot.registers if r.name == "XPSR"), 0)
-        xpsr &= 0xFFFFFFFF
-        regs.append(xpsr)
+        regs.append(xpsr & 0xFFFFFFFF)
         return b"".join(value.to_bytes(4, "little") for value in regs)
 
     def write_registers(self, payload: bytes) -> bool:
@@ -46,13 +45,13 @@ class GdbTarget:
         return True
 
     def read_memory(self, address: int, length: int) -> bytes | None:
-        out = bytearray()
+        data = bytearray()
         for offset in range(length):
             try:
-                out.append(self.board.read(address + offset, 1))
+                data.append(self.board.read(address + offset, 1))
             except Exception:
                 return None
-        return bytes(out)
+        return bytes(data)
 
     def write_memory(self, address: int, data: bytes) -> bool:
         for offset, byte in enumerate(data):
@@ -119,6 +118,7 @@ class GdbRemoteServer:
         if received_checksum.lower() != expected:
             conn.sendall(b"-")
             return None
+
         conn.sendall(b"+")
         return payload
 
@@ -135,55 +135,91 @@ class GdbRemoteServer:
             return ""
         return ""
 
-    def _handle_packet(self, payload: str) -> str:
-        if payload.startswith("q"):
-            return self._handle_query(payload)
-        if payload == "?":
-            return _SIGNAL_TRAP
+    def _handle_register_ops(self, payload: str) -> str | None:
         if payload == "g":
             return self.target.read_registers().hex()
         if payload.startswith("G"):
             success = self.target.write_registers(bytes.fromhex(payload[1:]))
             return "OK" if success else "E01"
+        return None
+
+    def _handle_memory_ops(self, payload: str) -> str | None:
         if payload.startswith("m"):
-            addr_hex, length_hex = payload[1:].split(",")
+            addr_hex, length_hex = payload[1:].split(",", maxsplit=1)
             data = self.target.read_memory(int(addr_hex, 16), int(length_hex, 16))
             return data.hex() if data is not None else "E01"
+
         if payload.startswith("M"):
-            header, data_hex = payload[1:].split(":", 1)
-            addr_hex, _length_hex = header.split(",")
+            header, data_hex = payload[1:].split(":", maxsplit=1)
+            addr_hex, _length_hex = header.split(",", maxsplit=1)
             success = self.target.write_memory(
                 int(addr_hex, 16), bytes.fromhex(data_hex)
             )
             return "OK" if success else "E02"
+
         if payload.startswith("X"):
             return ""
+
+        return None
+
+    def _handle_exec_ops(self, payload: str) -> str | None:
         if payload.startswith("c"):
             if len(payload) > 1:
                 self.target.set_pc(int(payload[1:], 16))
             return self.target.cont()
+
         if payload.startswith("s"):
             if len(payload) > 1:
                 self.target.set_pc(int(payload[1:], 16))
             return self.target.step()
+
+        if payload == "?":
+            return _SIGNAL_TRAP
+
+        return None
+
+    def _handle_breakpoint_ops(self, payload: str) -> str | None:
         if payload.startswith("Z0,"):
-            address = int(payload.split(",")[1], 16)
+            address = int(payload.split(",", maxsplit=2)[1], 16)
             self.target.breakpoints.add(address & 0xFFFFFFFE)
             return "OK"
+
         if payload.startswith("z0,"):
-            address = int(payload.split(",")[1], 16)
+            address = int(payload.split(",", maxsplit=2)[1], 16)
             self.target.breakpoints.discard(address & 0xFFFFFFFE)
             return "OK"
+
+        return None
+
+    def _handle_vcont(self, payload: str) -> str | None:
         if payload.startswith("vCont?"):
             return "vCont;c;s"
         if payload.startswith("vCont;"):
             if ";s" in payload:
                 return self.target.step()
             return self.target.cont()
+        return None
+
+    def _handle_packet(self, payload: str) -> str:
+        if payload.startswith("q"):
+            return self._handle_query(payload)
+
+        for handler in (
+            self._handle_register_ops,
+            self._handle_memory_ops,
+            self._handle_exec_ops,
+            self._handle_breakpoint_ops,
+            self._handle_vcont,
+        ):
+            response = handler(payload)
+            if response is not None:
+                return response
+
         if payload in {"Hc0", "Hg0", "D"}:
             return "OK"
-        if payload == "k":
+        if payload in {"k", "!"}:
             return ""
+
         return ""
 
     def serve_forever(self) -> None:
