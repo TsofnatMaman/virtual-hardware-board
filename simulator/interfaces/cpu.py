@@ -28,6 +28,16 @@ class ICPU(ABC):
         """Return a debug snapshot of CPU registers and flags."""
         ...
 
+    @abstractmethod
+    def get_register(self, index: int) -> int:
+        """Return core register value by architectural index (0-15)."""
+        ...
+
+    @abstractmethod
+    def set_register(self, index: int, value: int) -> None:
+        """Set core register value by architectural index (0-15)."""
+        ...
+
     def tick(self, cycles: int = 1) -> None:
         """Advance CPU by the given number of cycles (default: step cycles)."""
         for _ in range(cycles):
