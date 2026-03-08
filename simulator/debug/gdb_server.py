@@ -94,27 +94,35 @@ class GdbRemoteServer:
         packet = f"${payload}#{self._checksum(payload)}".encode("ascii")
         conn.sendall(packet)
 
-    def _read_packet(self, conn: socket.socket) -> str | None:
+    def _recv_until_packet_start(self, conn: socket.socket) -> bool:
         while True:
             char = conn.recv(1)
             if not char:
-                return None
+                return False
             if char == b"+":
                 continue
             if char == b"$":
-                break
+                return True
 
+    def _recv_payload(self, conn: socket.socket) -> str | None:
         data = bytearray()
         while True:
             char = conn.recv(1)
             if not char:
                 return None
             if char == b"#":
-                break
+                return data.decode("ascii")
             data.extend(char)
 
+    def _read_packet(self, conn: socket.socket) -> str | None:
+        if not self._recv_until_packet_start(conn):
+            return None
+
+        payload = self._recv_payload(conn)
+        if payload is None:
+            return None
+
         received_checksum = conn.recv(2)
-        payload = data.decode("ascii")
         expected = self._checksum(payload).encode("ascii")
         if received_checksum.lower() != expected:
             conn.sendall(b"-")

@@ -49,29 +49,31 @@ def test_register_roundtrip_and_breakpoint_continue():
     server = GdbRemoteServer(target)
 
     g_response = server._handle_packet("g")
-    assert len(bytes.fromhex(g_response)) == 17 * 4
+    assert len(bytes.fromhex(g_response)) == 17 * 4  # nosec B101
 
     new_payload = (b"\x11\x00\x00\x00" * 17).hex()
-    assert server._handle_packet(f"G{new_payload}") == "OK"
-    assert target.board.cpu.get_register(0) == 0x11
+    assert server._handle_packet(f"G{new_payload}") == "OK"  # nosec B101
+    assert target.board.cpu.get_register(0) == 0x11  # nosec B101
 
-    assert server._handle_packet("Z0,1004,2") == "OK"
+    assert server._handle_packet("Z0,1004,2") == "OK"  # nosec B101
     target.board.cpu.set_register(15, 0x1001)
-    assert server._handle_packet("c") == "T05thread:1;"
+    assert server._handle_packet("c") == "T05thread:1;"  # nosec B101
 
 
 def test_memory_read_write_packets():
     target = GdbTarget(board=DummyBoard())
     server = GdbRemoteServer(target)
 
-    assert server._handle_packet("M2000,4:01020304") == "OK"
-    assert server._handle_packet("m2000,4") == "01020304"
+    assert server._handle_packet("M2000,4:01020304") == "OK"  # nosec B101
+    assert server._handle_packet("m2000,4") == "01020304"  # nosec B101
 
 
 def test_query_packets():
     target = GdbTarget(board=DummyBoard())
     server = GdbRemoteServer(target)
 
-    assert "PacketSize" in server._handle_packet("qSupported:multiprocess+")
-    assert server._handle_packet("qfThreadInfo") == "m1"
-    assert server._handle_packet("qsThreadInfo") == "l"
+    assert "PacketSize" in server._handle_packet(
+        "qSupported:multiprocess+"
+    )  # nosec B101
+    assert server._handle_packet("qfThreadInfo") == "m1"  # nosec B101
+    assert server._handle_packet("qsThreadInfo") == "l"  # nosec B101
