@@ -176,7 +176,7 @@ def test_parse_args_build_target_and_main(monkeypatch, tmp_path):
             "--firmware",
             str(firmware_path),
             "--host",
-            "0.0.0.0",
+            "127.0.0.1",
             "--port",
             "5555",
             "--max-continue-steps",
@@ -187,6 +187,7 @@ def test_parse_args_build_target_and_main(monkeypatch, tmp_path):
     assert args.board == "tm4c123"  # nosec B101
     assert args.port == 5555  # nosec B101
     assert args.max_continue_steps == 123  # nosec B101
+    assert args.host == "127.0.0.1"  # nosec B101
 
     board = DummyBoard()
     monkeypatch.setattr(gdb_server, "create_board", lambda _name: board)
@@ -226,3 +227,43 @@ def test_package_main_invokes_gdb_main(monkeypatch):
     monkeypatch.setattr("simulator.debug.gdb_server.main", _fake_main)
     runpy.run_module("simulator.debug.__main__", run_name="__main__")
     assert invoked["count"] == 1  # nosec B101
+
+
+class FailingBoard(DummyBoard):
+    def read(self, address: int, size: int = 4) -> int:
+        raise ValueError("read fail")
+
+    def write(self, address: int, size: int, value: int) -> None:
+        raise ValueError("write fail")
+
+
+def test_target_failure_paths_and_register_bounds():
+    target = GdbTarget(board=DummyBoard(), max_continue_steps=1)
+
+    short_payload = b"\x00" * 8
+    assert target.write_registers(short_payload) is False  # nosec B101
+
+    target.set_pc(0x2000)
+    assert target.board.cpu.get_register(15) == 0x2001  # nosec B101
+
+    target.breakpoints.clear()
+    response = target.cont()
+    assert response == "T05thread:1;"  # nosec B101
+
+
+def test_target_memory_error_paths():
+    target = GdbTarget(board=FailingBoard())
+    assert target.read_memory(0x2000, 2) is None  # nosec B101
+    assert target.write_memory(0x2000, b"\x01\x02") is False  # nosec B101
+
+
+def test_read_packet_stream_termination_cases():
+    server = GdbRemoteServer(GdbTarget(board=DummyBoard()))
+
+    # EOF before packet start
+    conn_no_start = FakeConn(b"")
+    assert server._read_packet(conn_no_start) is None  # nosec B101
+
+    # EOF while reading payload
+    conn_no_payload_end = FakeConn(b"$abc")
+    assert server._read_packet(conn_no_payload_end) is None  # nosec B101
