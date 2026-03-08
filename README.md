@@ -67,7 +67,9 @@ Supported protocol subset: register/memory read-write, binary memory write (`X`)
 `continue`, and software breakpoints (`Z0/z0`).
 
 In both headless and GUI GDB modes, `--firmware` is optional: your IDE/GDB can upload
-the program at runtime (using `load`).
+the program at runtime (using `load`). After code is written to flash, the simulator
+performs a reset automatically on the first step/continue so execution starts from the
+vector table like real hardware reset.
 
 For VS Code, create `.vscode/launch.json` with a `cppdbg` or Cortex-Debug
 configuration that points to `127.0.0.1:3333`.
@@ -88,8 +90,10 @@ configuration that points to `127.0.0.1:3333`.
    - `miDebuggerServerAddress`: `127.0.0.1:3333`
 4. In the Debug Console run `load` (or let the extension upload automatically) so
    the IDE streams program bytes into the simulator.
-5. Set breakpoints in C and press **Start Debugging**.
-6. Use **Continue / Step Over / Step Into** in VS Code and watch GPIO/LED changes
+5. Optionally run `monitor reset`/restart command from your extension; otherwise the
+   first step/continue will reset automatically after load.
+6. Set breakpoints in C and press **Start Debugging**.
+7. Use **Continue / Step Over / Step Into** in VS Code and watch GPIO/LED changes
    in the GUI window.
 
 ## Project structure

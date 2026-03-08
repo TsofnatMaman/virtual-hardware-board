@@ -36,6 +36,8 @@ class DummyCPU:
 class DummyFlash:
     def __init__(self):
         self.loaded = b""
+        self.base = 0x00000000
+        self.size = 0x00080000
 
     def load_image(self, image: bytes) -> None:
         self.loaded = image
@@ -66,6 +68,7 @@ class DummyBoard:
 
     def reset(self) -> None:
         self.reset_calls += 1
+        self.cpu.set_register(15, 0x1001)
 
 
 class FakeConn:
@@ -264,6 +267,18 @@ def test_target_memory_error_paths():
     assert target.write_memory(0x2000, b"\x01\x02") is False  # nosec B101
 
 
+def test_flash_write_marks_reset_and_step_resets():
+    target = GdbTarget(board=DummyBoard())
+
+    assert target.write_memory(0x00000000, b"\x01\x02\x03\x04") is True  # nosec B101
+    assert target._needs_reset is True  # nosec B101
+
+    response = target.step()
+    assert response == "S05"  # nosec B101
+    assert target.board.reset_calls == 1  # nosec B101
+    assert target._needs_reset is False  # nosec B101
+
+
 def test_read_packet_stream_termination_cases():
     server = GdbRemoteServer(GdbTarget(board=DummyBoard()))
 
@@ -284,6 +299,14 @@ def test_packet_variants_cover_additional_handlers():
     assert server._handle_packet("m2000,2") == "4142"  # nosec B101
     assert server._handle_packet("qTStatus") == ""  # nosec B101
     assert server._handle_packet("z0,1004,2") == "OK"  # nosec B101
+
+
+def test_restart_packet_resets_target():
+    target = GdbTarget(board=DummyBoard())
+    server = GdbRemoteServer(target)
+
+    assert server._handle_packet("R") == "S05"  # nosec B101
+    assert target.board.reset_calls == 1  # nosec B101
 
 
 def test_serve_forever_single_client_cycle(monkeypatch):

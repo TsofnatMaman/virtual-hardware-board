@@ -27,6 +27,7 @@ class GdbTarget:
     board: Board
     max_continue_steps: int = 250_000
     breakpoints: set[int] = field(default_factory=set)
+    _needs_reset: bool = False
 
     def _canonical_pc(self, value: int) -> int:
         return value & 0xFFFFFFFE
@@ -61,16 +62,38 @@ class GdbTarget:
                 self.board.write(address + offset, 1, byte)
             except (SimulatorError, ValueError):
                 return False
+        self._mark_reset_needed_if_flash_write(address, len(data))
         return True
+
+    def _mark_reset_needed_if_flash_write(self, address: int, length: int) -> None:
+        flash = self.board.address_space.flash
+        write_start = address
+        write_end = address + max(length - 1, 0)
+        flash_start = flash.base
+        flash_end = flash.base + flash.size - 1
+        if write_start <= flash_end and write_end >= flash_start:
+            self._needs_reset = True
+
+    def restart(self) -> str:
+        self.board.reset()
+        self._needs_reset = False
+        return _SIGNAL_TRAP
+
+    def _ensure_runtime_reset(self) -> None:
+        if self._needs_reset:
+            self.board.reset()
+            self._needs_reset = False
 
     def set_pc(self, address: int) -> None:
         self.board.cpu.set_register(15, address | 1)
 
     def step(self) -> str:
+        self._ensure_runtime_reset()
         self.board.step(1)
         return _SIGNAL_TRAP
 
     def cont(self) -> str:
+        self._ensure_runtime_reset()
         for _ in range(self.max_continue_steps):
             pc = self._canonical_pc(self.board.cpu.get_register(15))
             if pc in self.breakpoints:
@@ -246,6 +269,8 @@ class GdbRemoteServer:
 
         if payload in {"Hc0", "Hg0", "D"}:
             return "OK"
+        if payload == "R":
+            return self.target.restart()
         if payload in {"k", "!"}:
             return ""
 
