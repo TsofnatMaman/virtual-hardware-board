@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from simulator import create_board
+from simulator.core.exceptions import SimulatorError
 from simulator.interfaces.board import Board
 
 _SIGNAL_TRAP = "S05"
@@ -49,7 +50,7 @@ class GdbTarget:
         for offset in range(length):
             try:
                 data.append(self.board.read(address + offset, 1))
-            except Exception:
+            except (SimulatorError, ValueError):
                 return None
         return bytes(data)
 
@@ -57,7 +58,7 @@ class GdbTarget:
         for offset, byte in enumerate(data):
             try:
                 self.board.write(address + offset, 1, byte)
-            except Exception:
+            except (SimulatorError, ValueError):
                 return False
         return True
 
