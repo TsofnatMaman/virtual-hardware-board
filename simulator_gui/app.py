@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import argparse
 import sys
+import threading
 from pathlib import Path
 
 from PySide6 import QtWidgets
 
 from simulator import create_board, list_available_boards, verify_boards_registered
+from simulator.debug import GdbRemoteServer, GdbTarget
 from simulator_gui.backend import BoardBackend
 from simulator_gui.config import load_gui_config
 from simulator_gui.controller import SimulationController
@@ -36,6 +38,23 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--tick-ms", type=int, default=16, help="GUI tick interval (ms)"
     )
+    parser.add_argument(
+        "--gdb-port",
+        type=int,
+        default=None,
+        help="Enable in-process GDB server on this port",
+    )
+    parser.add_argument(
+        "--gdb-host",
+        default="127.0.0.1",
+        help="Bind host for in-process GDB server",
+    )
+    parser.add_argument(
+        "--gdb-max-continue-steps",
+        type=int,
+        default=250_000,
+        help="Instruction budget per GDB continue command",
+    )
     return parser.parse_args(argv)
 
 
@@ -60,6 +79,23 @@ def run_gui(argv: list[str] | None = None) -> int:
     backend = BoardBackend(board)
     controller = SimulationController(backend, controllers)
 
+    gdb_stop_event = None
+    gdb_thread = None
+    if args.gdb_port is not None:
+        gdb_stop_event = threading.Event()
+        gdb_server = GdbRemoteServer(
+            target=GdbTarget(board, max_continue_steps=args.gdb_max_continue_steps),
+            host=args.gdb_host,
+            port=args.gdb_port,
+        )
+        gdb_thread = threading.Thread(
+            target=gdb_server.serve_forever,
+            kwargs={"stop_event": gdb_stop_event},
+            daemon=True,
+            name="sim-gdb-server",
+        )
+        gdb_thread.start()
+
     app = QtWidgets.QApplication(sys.argv)
     window = MainWindow(
         controller,
@@ -70,7 +106,14 @@ def run_gui(argv: list[str] | None = None) -> int:
     )
     window.resize(gui_config.canvas.width + 300, gui_config.canvas.height + 120)
     window.show()
-    return app.exec()
+    exit_code = app.exec()
+
+    if gdb_stop_event is not None:
+        gdb_stop_event.set()
+    if gdb_thread is not None:
+        gdb_thread.join(timeout=1.0)
+
+    return exit_code
 
 
 def main() -> None:

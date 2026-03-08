@@ -42,6 +42,8 @@ python -m simulator_gui --board tm4c123 --firmware firmware/led_blink/tm4c/firmw
 You can run the simulator as a classic **GDB remote target** and attach to it
 from VS Code or plain `arm-none-eabi-gdb`.
 
+### Option A: debug-only backend (headless)
+
 ```bash
 # terminal A: start simulator-backed GDB server
 python -m simulator.debug --board tm4c123 --firmware firmware/led_blink/tm4c/firmware.bin --port 3333
@@ -51,11 +53,39 @@ arm-none-eabi-gdb firmware/led_blink/tm4c/firmware.elf \
   -ex "target remote :3333"
 ```
 
+### Option B: GUI + GDB on the same board instance (recommended)
+
+```bash
+# run GUI and embedded GDB server together
+python -m simulator_gui --board tm4c123 --firmware firmware/led_blink/tm4c/firmware.bin --gdb-port 3333
+
+# shortcut example script
+python examples/run_gui_with_gdb.py
+```
+
 Supported protocol subset: register/memory read-write, `step`, `continue`, and
 software breakpoints (`Z0/z0`).
 
 For VS Code, create `.vscode/launch.json` with a `cppdbg` or Cortex-Debug
-configuration that points to `:3333`.
+configuration that points to `127.0.0.1:3333`.
+
+### VS Code step-by-step (C firmware + visual simulator)
+
+1. Build firmware + ELF:
+   ```bash
+   make -f firmware/Makefile BOARD=tm4c123 MAIN=firmware/led_blink/tm4c/main.c
+   ```
+2. Start the visual simulator with built-in GDB server:
+   ```bash
+   python -m simulator_gui --board tm4c123 --firmware firmware/led_blink/tm4c/firmware.bin --gdb-port 3333
+   ```
+3. In VS Code, open your C source folder and launch a `cppdbg` config that uses:
+   - `miDebuggerPath`: `arm-none-eabi-gdb`
+   - `program`: `firmware/led_blink/tm4c/firmware.elf`
+   - `miDebuggerServerAddress`: `127.0.0.1:3333`
+4. Set breakpoints in C and press **Start Debugging**.
+5. Use **Continue / Step Over / Step Into** in VS Code and watch GPIO/LED changes
+   in the GUI window.
 
 ## Project structure
 

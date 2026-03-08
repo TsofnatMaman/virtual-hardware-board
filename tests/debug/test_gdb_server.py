@@ -311,6 +311,9 @@ def test_serve_forever_single_client_cycle(monkeypatch):
         def listen(self, backlog):
             self.listen_backlog = backlog
 
+        def settimeout(self, timeout):
+            self.timeout = timeout
+
         def accept(self):
             self.accept_calls += 1
             if self.accept_calls == 1:
@@ -331,3 +334,44 @@ def test_serve_forever_single_client_cycle(monkeypatch):
     assert fake_socket.bound == ("127.0.0.1", 3333)  # nosec B101
     assert fake_socket.listen_backlog == 1  # nosec B101
     assert fake_socket.accept_calls == 2  # nosec B101
+
+
+def test_serve_forever_stops_when_event_set(monkeypatch):
+    target = GdbTarget(board=DummyBoard())
+    server = GdbRemoteServer(target, host="127.0.0.1", port=3333)
+
+    class _FakeServerSocket:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def setsockopt(self, level, optname, value):
+            return None
+
+        def bind(self, addr):
+            self.bound = addr
+
+        def listen(self, backlog):
+            self.listen_backlog = backlog
+
+        def settimeout(self, timeout):
+            self.timeout = timeout
+
+        def accept(self):
+            raise AssertionError("accept should not be called when stop event set")
+
+    fake_socket = _FakeServerSocket()
+    stop_event = gdb_server.threading.Event()
+    stop_event.set()
+
+    monkeypatch.setattr(
+        gdb_server.socket, "socket", lambda *args, **kwargs: fake_socket
+    )
+
+    server.serve_forever(stop_event=stop_event, poll_timeout_s=0.05)
+
+    assert fake_socket.bound == ("127.0.0.1", 3333)  # nosec B101
+    assert fake_socket.listen_backlog == 1  # nosec B101
+    assert fake_socket.timeout == 0.05  # nosec B101

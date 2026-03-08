@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import socket
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -231,15 +232,27 @@ class GdbRemoteServer:
 
         return ""
 
-    def serve_forever(self) -> None:
+    def serve_forever(
+        self,
+        stop_event: threading.Event | None = None,
+        poll_timeout_s: float = 0.2,
+    ) -> None:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
             server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             server.bind((self.host, self.port))
             server.listen(1)
+            server.settimeout(poll_timeout_s)
             print(f"[gdb] listening on {self.host}:{self.port}")
 
             while True:
-                conn, addr = server.accept()
+                if stop_event is not None and stop_event.is_set():
+                    break
+
+                try:
+                    conn, addr = server.accept()
+                except socket.timeout:
+                    continue
+
                 print(f"[gdb] client connected: {addr[0]}:{addr[1]}")
                 with conn:
                     while True:
