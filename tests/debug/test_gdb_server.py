@@ -196,6 +196,13 @@ def test_parse_args_build_target_and_main(monkeypatch, tmp_path):
     assert board.reset_calls == 1  # nosec B101
     assert target.max_continue_steps == 7  # nosec B101
 
+    board_no_fw = DummyBoard()
+    monkeypatch.setattr(gdb_server, "create_board", lambda _name: board_no_fw)
+    target_no_fw = gdb_server.build_target("tm4c123", None, 5)
+    assert board_no_fw.address_space.flash.loaded == b""  # nosec B101
+    assert board_no_fw.reset_calls == 0  # nosec B101
+    assert target_no_fw.max_continue_steps == 5  # nosec B101
+
     calls: list[tuple[object | None, str, int]] = []
 
     class FakeServer:
@@ -273,7 +280,8 @@ def test_packet_variants_cover_additional_handlers():
     target = GdbTarget(board=DummyBoard())
     server = GdbRemoteServer(target)
 
-    assert server._handle_packet("X2000,4:0102") == ""  # nosec B101
+    assert server._handle_packet("X2000,2:AB") == "OK"  # nosec B101
+    assert server._handle_packet("m2000,2") == "4142"  # nosec B101
     assert server._handle_packet("qTStatus") == ""  # nosec B101
     assert server._handle_packet("z0,1004,2") == "OK"  # nosec B101
 
@@ -375,3 +383,14 @@ def test_serve_forever_stops_when_event_set(monkeypatch):
     assert fake_socket.bound == ("127.0.0.1", 3333)  # nosec B101
     assert fake_socket.listen_backlog == 1  # nosec B101
     assert fake_socket.timeout == 0.05  # nosec B101
+
+
+def test_x_packet_escaped_binary_write():
+    target = GdbTarget(board=DummyBoard())
+    server = GdbRemoteServer(target)
+
+    # raw payload after escaping decodes to b"A}#"
+    # '}' is escaped as '}]' and '#' as '}\x03' (0x23 ^ 0x20).
+    encoded = "A}]" + chr(0x7D) + chr(0x03)
+    assert server._handle_packet(f"X3000,3:{encoded}") == "OK"  # nosec B101
+    assert server._handle_packet("m3000,3") == "417d23"  # nosec B101

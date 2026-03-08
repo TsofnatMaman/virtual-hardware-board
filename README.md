@@ -42,11 +42,11 @@ python -m simulator_gui --board tm4c123 --firmware firmware/led_blink/tm4c/firmw
 You can run the simulator as a classic **GDB remote target** and attach to it
 from VS Code or plain `arm-none-eabi-gdb`.
 
-### Option A: debug-only backend (headless)
+### Option A: debug-only backend (headless, IDE loads program)
 
 ```bash
 # terminal A: start simulator-backed GDB server
-python -m simulator.debug --board tm4c123 --firmware firmware/led_blink/tm4c/firmware.bin --port 3333
+python -m simulator.debug --board tm4c123 --port 3333
 
 # terminal B: connect with gdb
 arm-none-eabi-gdb firmware/led_blink/tm4c/firmware.elf \
@@ -63,8 +63,11 @@ python -m simulator_gui --board tm4c123 --firmware firmware/led_blink/tm4c/firmw
 python examples/run_gui_with_gdb.py
 ```
 
-Supported protocol subset: register/memory read-write, `step`, `continue`, and
-software breakpoints (`Z0/z0`).
+Supported protocol subset: register/memory read-write, binary memory write (`X`), `step`,
+`continue`, and software breakpoints (`Z0/z0`).
+
+In pure GDB mode, `--firmware` is optional: your IDE/GDB can upload the program at runtime
+(using `load`).
 
 For VS Code, create `.vscode/launch.json` with a `cppdbg` or Cortex-Debug
 configuration that points to `127.0.0.1:3333`.

@@ -89,7 +89,7 @@ class GdbRemoteServer:
 
     @staticmethod
     def _checksum(payload: str) -> str:
-        return f"{sum(payload.encode('ascii')) & 0xFF:02x}"
+        return f"{sum(payload.encode('latin-1')) & 0xFF:02x}"
 
     def _send_packet(self, conn: socket.socket, payload: str) -> None:
         packet = f"${payload}#{self._checksum(payload)}".encode("ascii")
@@ -112,7 +112,7 @@ class GdbRemoteServer:
             if not char:
                 return None
             if char == b"#":
-                return data.decode("ascii")
+                return data.decode("latin-1")
             data.extend(char)
 
     def _read_packet(self, conn: socket.socket) -> str | None:
@@ -124,7 +124,7 @@ class GdbRemoteServer:
             return None
 
         received_checksum = conn.recv(2)
-        expected = self._checksum(payload).encode("ascii")
+        expected = self._checksum(payload).encode("latin-1")
         if received_checksum.lower() != expected:
             conn.sendall(b"-")
             return None
@@ -144,6 +144,21 @@ class GdbRemoteServer:
         if payload.startswith("qTStatus"):
             return ""
         return ""
+
+    @staticmethod
+    def _decode_x_payload(raw: str) -> bytes:
+        data = raw.encode("latin-1")
+        out = bytearray()
+        idx = 0
+        while idx < len(data):
+            byte = data[idx]
+            if byte == 0x7D and idx + 1 < len(data):
+                idx += 1
+                out.append(data[idx] ^ 0x20)
+            else:
+                out.append(byte)
+            idx += 1
+        return bytes(out)
 
     def _handle_register_ops(self, payload: str) -> str | None:
         if payload == "g":
@@ -168,7 +183,11 @@ class GdbRemoteServer:
             return "OK" if success else "E02"
 
         if payload.startswith("X"):
-            return ""
+            header, raw_data = payload[1:].split(":", maxsplit=1)
+            addr_hex, _length_hex = header.split(",", maxsplit=1)
+            data = self._decode_x_payload(raw_data)
+            success = self.target.write_memory(int(addr_hex, 16), data)
+            return "OK" if success else "E03"
 
         return None
 
@@ -269,7 +288,9 @@ class GdbRemoteServer:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run GDB remote server for simulator")
     parser.add_argument("--board", default="tm4c123", help="Board key in registry")
-    parser.add_argument("--firmware", required=True, help="Path to firmware .bin")
+    parser.add_argument(
+        "--firmware", default=None, help="Optional path to firmware .bin"
+    )
     parser.add_argument("--host", default="127.0.0.1", help="Bind host")
     parser.add_argument("--port", type=int, default=3333, help="Bind port")
     parser.add_argument(
@@ -282,12 +303,13 @@ def parse_args() -> argparse.Namespace:
 
 
 def build_target(
-    board_name: str, firmware_path: str, max_continue_steps: int
+    board_name: str, firmware_path: str | None, max_continue_steps: int
 ) -> GdbTarget:
     board = create_board(board_name)
-    firmware = Path(firmware_path).read_bytes()
-    board.address_space.flash.load_image(firmware)
-    board.reset()
+    if firmware_path:
+        firmware = Path(firmware_path).read_bytes()
+        board.address_space.flash.load_image(firmware)
+        board.reset()
     return GdbTarget(board=board, max_continue_steps=max_continue_steps)
 
 
