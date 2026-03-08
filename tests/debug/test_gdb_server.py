@@ -267,3 +267,67 @@ def test_read_packet_stream_termination_cases():
     # EOF while reading payload
     conn_no_payload_end = FakeConn(b"$abc")
     assert server._read_packet(conn_no_payload_end) is None  # nosec B101
+
+
+def test_packet_variants_cover_additional_handlers():
+    target = GdbTarget(board=DummyBoard())
+    server = GdbRemoteServer(target)
+
+    assert server._handle_packet("X2000,4:0102") == ""  # nosec B101
+    assert server._handle_packet("qTStatus") == ""  # nosec B101
+    assert server._handle_packet("z0,1004,2") == "OK"  # nosec B101
+
+
+def test_serve_forever_single_client_cycle(monkeypatch):
+    target = GdbTarget(board=DummyBoard())
+    server = GdbRemoteServer(target, host="127.0.0.1", port=3333)
+
+    class _ClientConn(FakeConn):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    class _FakeServerSocket:
+        def __init__(self):
+            self.accept_calls = 0
+            self.options = []
+            self.bound = None
+            self.listen_backlog = None
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def setsockopt(self, level, optname, value):
+            self.options.append((level, optname, value))
+
+        def bind(self, addr):
+            self.bound = addr
+
+        def listen(self, backlog):
+            self.listen_backlog = backlog
+
+        def accept(self):
+            self.accept_calls += 1
+            if self.accept_calls == 1:
+                return _ClientConn(b"$k#6b"), ("127.0.0.1", 1111)
+            raise StopIteration
+
+    fake_socket = _FakeServerSocket()
+
+    monkeypatch.setattr(
+        gdb_server.socket, "socket", lambda *args, **kwargs: fake_socket
+    )
+
+    try:
+        server.serve_forever()
+    except StopIteration:
+        pass
+
+    assert fake_socket.bound == ("127.0.0.1", 3333)  # nosec B101
+    assert fake_socket.listen_backlog == 1  # nosec B101
+    assert fake_socket.accept_calls == 2  # nosec B101
