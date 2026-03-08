@@ -1,4 +1,8 @@
-"""Run simulator GUI and GDB server together (shared board instance)."""
+"""Run simulator GUI and GDB server together (shared board instance).
+
+This launcher starts with an empty board and expects IDE/GDB to upload program
+bytes at runtime (e.g. `load` command).
+"""
 
 import sys
 from pathlib import Path
@@ -11,13 +15,10 @@ from simulator_gui import run_gui
 
 
 if __name__ == "__main__":
-    firmware = ROOT / "firmware" / "led_blink" / "tm4c" / "firmware.bin"
     run_gui(
         [
             "--board",
             "tm4c123",
-            "--firmware",
-            str(firmware),
             "--gdb-port",
             "3333",
             "--gdb-host",

@@ -57,7 +57,7 @@ arm-none-eabi-gdb firmware/led_blink/tm4c/firmware.elf \
 
 ```bash
 # run GUI and embedded GDB server together
-python -m simulator_gui --board tm4c123 --firmware firmware/led_blink/tm4c/firmware.bin --gdb-port 3333
+python -m simulator_gui --board tm4c123 --gdb-port 3333
 
 # shortcut example script
 python examples/run_gui_with_gdb.py
@@ -66,8 +66,8 @@ python examples/run_gui_with_gdb.py
 Supported protocol subset: register/memory read-write, binary memory write (`X`), `step`,
 `continue`, and software breakpoints (`Z0/z0`).
 
-In pure GDB mode, `--firmware` is optional: your IDE/GDB can upload the program at runtime
-(using `load`).
+In both headless and GUI GDB modes, `--firmware` is optional: your IDE/GDB can upload
+the program at runtime (using `load`).
 
 For VS Code, create `.vscode/launch.json` with a `cppdbg` or Cortex-Debug
 configuration that points to `127.0.0.1:3333`.
@@ -80,14 +80,16 @@ configuration that points to `127.0.0.1:3333`.
    ```
 2. Start the visual simulator with built-in GDB server:
    ```bash
-   python -m simulator_gui --board tm4c123 --firmware firmware/led_blink/tm4c/firmware.bin --gdb-port 3333
+   python -m simulator_gui --board tm4c123 --gdb-port 3333
    ```
 3. In VS Code, open your C source folder and launch a `cppdbg` config that uses:
    - `miDebuggerPath`: `arm-none-eabi-gdb`
    - `program`: `firmware/led_blink/tm4c/firmware.elf`
    - `miDebuggerServerAddress`: `127.0.0.1:3333`
-4. Set breakpoints in C and press **Start Debugging**.
-5. Use **Continue / Step Over / Step Into** in VS Code and watch GPIO/LED changes
+4. In the Debug Console run `load` (or let the extension upload automatically) so
+   the IDE streams program bytes into the simulator.
+5. Set breakpoints in C and press **Start Debugging**.
+6. Use **Continue / Step Over / Step Into** in VS Code and watch GPIO/LED changes
    in the GUI window.
 
 ## Project structure
