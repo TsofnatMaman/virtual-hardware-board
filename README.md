@@ -37,6 +37,26 @@ python examples/run_gui.py
 python -m simulator_gui --board tm4c123 --firmware firmware/led_blink/tm4c/firmware.bin
 ```
 
+## GDB remote debugging (VS Code / gdb)
+
+You can run the simulator as a classic **GDB remote target** and attach to it
+from VS Code or plain `arm-none-eabi-gdb`.
+
+```bash
+# terminal A: start simulator-backed GDB server
+python -m simulator.debug --board tm4c123 --firmware firmware/led_blink/tm4c/firmware.bin --port 3333
+
+# terminal B: connect with gdb
+arm-none-eabi-gdb firmware/led_blink/tm4c/firmware.elf \
+  -ex "target remote :3333"
+```
+
+Supported protocol subset: register/memory read-write, `step`, `continue`, and
+software breakpoints (`Z0/z0`).
+
+For VS Code, create `.vscode/launch.json` with a `cppdbg` or Cortex-Debug
+configuration that points to `:3333`.
+
 ## Project structure
 
 ```text
