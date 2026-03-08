@@ -18,6 +18,16 @@ class DummyCPU(ICPU):
             flags={"Z": False},
         )
 
+    def get_register(self, index: int) -> int:
+        if index != 0:
+            raise ValueError("Dummy CPU exposes only R0")
+        return self.steps
+
+    def set_register(self, index: int, value: int) -> None:
+        if index != 0:
+            raise ValueError("Dummy CPU exposes only R0")
+        self.steps = value
+
 
 def test_icpu_default_tick_calls_step():
     cpu = DummyCPU()
@@ -29,3 +39,9 @@ def test_icpu_default_handle_interrupt_noop():
     cpu = DummyCPU()
     result = cpu.handle_interrupt(object())
     assert result is None
+
+
+def test_icpu_register_access_contract():
+    cpu = DummyCPU()
+    cpu.set_register(0, 7)
+    assert cpu.get_register(0) == 7

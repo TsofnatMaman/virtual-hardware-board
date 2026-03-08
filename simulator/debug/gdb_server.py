@@ -152,7 +152,9 @@ class GdbRemoteServer:
         if payload.startswith("M"):
             header, data_hex = payload[1:].split(":", 1)
             addr_hex, _length_hex = header.split(",")
-            success = self.target.write_memory(int(addr_hex, 16), bytes.fromhex(data_hex))
+            success = self.target.write_memory(
+                int(addr_hex, 16), bytes.fromhex(data_hex)
+            )
             return "OK" if success else "E02"
         if payload.startswith("X"):
             return ""
@@ -221,7 +223,9 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def build_target(board_name: str, firmware_path: str, max_continue_steps: int) -> GdbTarget:
+def build_target(
+    board_name: str, firmware_path: str, max_continue_steps: int
+) -> GdbTarget:
     board = create_board(board_name)
     firmware = Path(firmware_path).read_bytes()
     board.address_space.flash.load_image(firmware)
