@@ -4,15 +4,6 @@ A Python-based virtual hardware platform for simulating Cortex-M boards, loading
 firmware binaries, and observing peripheral behavior through CLI examples and a
 GUI.
 
-## Video tutorial
-
-[`docs/tutorial.mp4`](docs/tutorial.mp4) (about 8 minutes, narrated in English) goes from a
-fresh computer to debugging C code in VS Code on a virtual board:
-
-1. installing the simulator,
-2. creating a C project from the template and debugging it on the TM4C123,
-3. the same workflow on the STM32F4 Discovery.
-
 ## Quick start
 
 ### 1) Install dependencies
@@ -125,6 +116,14 @@ When `--gdb-port` is used with the GUI, the debugger owns the clock and the GUI
 only repaints.
 
 ### VS Code: press F5 (Cortex-Debug)
+
+**Video walkthrough** (about 8 minutes, narrated): from a fresh computer to debugging C in
+VS Code on a virtual board. Part 1 installs the simulator, part 2 creates a C project from the
+template and debugs it on the TM4C123, part 3 repeats the workflow on the STM32F4 Discovery.
+
+<video src="https://github.com/TsofnatMaman/virtual-hardware-board/raw/main/docs/tutorial.mp4" controls width="720"></video>
+
+If the player does not appear, open [`docs/tutorial.mp4`](docs/tutorial.mp4) directly.
 
 The repo ships `.vscode/launch.json` and `tasks.json`. Prerequisites: the
 **Cortex-Debug** extension (recommended automatically when you open the folder),
