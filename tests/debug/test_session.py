@@ -75,3 +75,15 @@ def test_json_errors_are_reported_not_raised():
     assert not session.handle_request({"cmd": "nope"})["ok"]  # nosec B101
     assert not session.handle_request({"cmd": "read_reg"})["ok"]  # nosec B101
     assert not session.handle_request({})["ok"]  # nosec B101
+
+
+def test_reset_on_unbootable_board_is_deferred_not_fatal():
+    class BlankFlashBoard(DummyBoard):
+        def reset(self) -> None:
+            raise RuntimeError("Invalid boot MSP")
+
+    session = DebugSession(BlankFlashBoard())
+    assert session.reset() is False  # nosec B101
+    assert session.needs_reset  # nosec B101
+    assert session.handle_request({"cmd": "reset"})["result"]["status"] == "deferred"  # nosec B101
+    assert session.step().reason == "fault"  # nosec B101

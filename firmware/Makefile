@@ -80,6 +80,7 @@ INCLUDES := -I$(dir $(MAIN_ABS)) -I$(BOARD_DIR)
 all: $(OUT_BIN)
 
 $(OUT_BIN): $(MAIN_ABS) $(STARTUP) $(LDSCRIPT)
+	@mkdir -p $(dir $(OUT_BIN))
 	@echo "Building $(OUT_BIN) (board=$(BOARD))"
 	$(CC) $(CFLAGS) $(LDFLAGS) $(INCLUDES) $(STARTUP) $(MAIN_ABS) -o $(OUT_ELF)
 	$(OBJCOPY) -O binary $(OUT_ELF) $(OUT_BIN)

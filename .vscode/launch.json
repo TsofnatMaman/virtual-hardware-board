@@ -1,0 +1,65 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug TM4C123 on simulator (GUI)",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "external",
+      "gdbTarget": "127.0.0.1:3333",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/tm4c123.elf",
+      "device": "TM4C123GH6PM",
+      "runToEntryPoint": "main",
+      "overrideLaunchCommands": [
+        "-target-download",
+        "interpreter-exec console \"monitor reset\""
+      ],
+      "overrideRestartCommands": [
+        "interpreter-exec console \"monitor reset\""
+      ],
+      "preLaunchTask": "sim: build + start (tm4c123)",
+      "postDebugTask": "sim: stop"
+    },
+    {
+      "name": "Debug STM32C031 on simulator (GUI)",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "external",
+      "gdbTarget": "127.0.0.1:3333",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/stm32c031.elf",
+      "device": "STM32C031C6",
+      "runToEntryPoint": "main",
+      "overrideLaunchCommands": [
+        "-target-download",
+        "interpreter-exec console \"monitor reset\""
+      ],
+      "overrideRestartCommands": [
+        "interpreter-exec console \"monitor reset\""
+      ],
+      "preLaunchTask": "sim: build + start (stm32c031)",
+      "postDebugTask": "sim: stop"
+    },
+    {
+      "name": "Debug TM4C123 on simulator (headless)",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "external",
+      "gdbTarget": "127.0.0.1:3333",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/tm4c123.elf",
+      "device": "TM4C123GH6PM",
+      "runToEntryPoint": "main",
+      "overrideLaunchCommands": [
+        "-target-download",
+        "interpreter-exec console \"monitor reset\""
+      ],
+      "overrideRestartCommands": [
+        "interpreter-exec console \"monitor reset\""
+      ],
+      "preLaunchTask": "sim: build + start (tm4c123, headless)",
+      "postDebugTask": "sim: stop"
+    }
+  ]
+}

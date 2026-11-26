@@ -351,6 +351,14 @@ class GdbRemoteServer:
 
         return ""
 
+    def _safe_handle_packet(self, payload: str) -> str:
+        """Never let one bad packet drop the debugger connection."""
+        try:
+            return self._handle_packet(payload)
+        except (SimulatorError, ValueError, RuntimeError) as exc:
+            print(f"[gdb] error handling '{payload[:32]}': {exc}")
+            return "E01"
+
     def serve_forever(
         self,
         stop_event: threading.Event | None = None,
@@ -379,7 +387,7 @@ class GdbRemoteServer:
                         payload = self._read_packet(conn)
                         if payload is None:
                             break
-                        response = self._handle_packet(payload)
+                        response = self._safe_handle_packet(payload)
                         if payload == "k":
                             break
                         self._send_packet(conn, response)

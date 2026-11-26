@@ -72,10 +72,20 @@ class DebugSession:
     def clear_halt(self) -> None:
         self._halt.clear()
 
-    def reset(self) -> None:
+    def reset(self) -> bool:
+        """Reset the board; returns False if it cannot boot yet.
+
+        A reset before the first download (blank flash has no valid vector
+        table) is normal for IDEs; it is deferred until flash is programmed.
+        """
         with self._lock:
-            self.board.reset()
+            try:
+                self.board.reset()
+            except (SimulatorError, ValueError, RuntimeError):
+                self.needs_reset = True
+                return False
             self.needs_reset = False
+            return True
 
     def _ensure_runtime_reset(self) -> None:
         if self.needs_reset:
@@ -310,8 +320,7 @@ class DebugSession:
         return {"version": 1, "board": self.board.name}
 
     def _cmd_reset(self, _request: dict[str, Any]) -> dict[str, Any]:
-        self.reset()
-        return {"status": "ok"}
+        return {"status": "ok" if self.reset() else "deferred"}
 
     def _cmd_read_mem(self, request: dict[str, Any]) -> dict[str, Any]:
         data = self.read_memory(int(request["address"]), int(request["size"]))

@@ -100,6 +100,21 @@ protocol) and `DebugServer` (JSON for the CMSIS-DAP proxy) are thin adapters.
 When `--gdb-port` is used with the GUI, the debugger owns the clock and the GUI
 only repaints.
 
+### VS Code: press F5 (Cortex-Debug)
+
+The repo ships `.vscode/launch.json` and `tasks.json`. Prerequisites: the
+**Cortex-Debug** extension (recommended automatically when you open the folder),
+`arm-none-eabi-gcc`/`make`, `arm-none-eabi-gdb` on `PATH` (or set
+`cortex-debug.gdbPath`, e.g. to `gdb-multiarch`), and `pip install -r requirements.txt -r requirements-gui.txt`.
+
+1. Open the repo folder in VS Code.
+2. Run and Debug -> pick **Debug TM4C123 on simulator (GUI)** (or STM32C031 /
+   headless) -> **F5**.
+3. VS Code builds the firmware (`build/<board>.elf`), starts the simulator with its
+   GDB server on port 3333, downloads the program, resets and stops at `main`.
+4. Set breakpoints/watchpoints in C, step, continue, **Pause** (Ctrl+C), and watch
+   the LEDs in the simulator window. Stopping the session closes the simulator.
+
 ### VS Code step-by-step (C firmware + visual simulator)
 
 1. Build firmware + ELF:

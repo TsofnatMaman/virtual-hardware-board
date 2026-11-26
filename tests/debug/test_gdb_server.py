@@ -442,3 +442,8 @@ def test_watch_packets_unsupported_cpu_and_malformed():
     assert server._handle_packet("Z3,zz") == "E01"  # nosec B101
     assert server._handle_packet("z4,2000,4") == "OK"  # nosec B101
     assert server.target.halt() is None  # nosec B101
+
+
+def test_bad_packet_returns_error_instead_of_raising():
+    server = GdbRemoteServer(GdbTarget(board=FailingBoard()))
+    assert server._safe_handle_packet("m2000,zz") == "E01"  # nosec B101

@@ -1,0 +1,130 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "firmware: build (tm4c123)",
+      "type": "shell",
+      "command": "make -f firmware/Makefile BOARD=tm4c123 MAIN=firmware/led_blink/tm4c/main.c OUT=build/tm4c123.bin",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "firmware: build (stm32c031)",
+      "type": "shell",
+      "command": "make -f firmware/Makefile BOARD=stm32c031 MAIN=firmware/led_blink/stm32/main.c OUT=build/stm32c031.bin",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "sim: start (tm4c123)",
+      "type": "shell",
+      "command": "python -u -m simulator_gui --board tm4c123 --gdb-port 3333",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "simulator",
+        "pattern": {
+          "regexp": "^SIMULATOR_NEVER_MATCHES$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^NEVER$",
+          "endsPattern": "^\\[gdb\\] listening on "
+        }
+      },
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "sim: start (stm32c031)",
+      "type": "shell",
+      "command": "python -u -m simulator_gui --board stm32c031 --gdb-port 3333",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "simulator",
+        "pattern": {
+          "regexp": "^SIMULATOR_NEVER_MATCHES$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^NEVER$",
+          "endsPattern": "^\\[gdb\\] listening on "
+        }
+      },
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "sim: start (tm4c123, headless)",
+      "type": "shell",
+      "command": "python -u -m simulator.debug --board tm4c123 --port 3333",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "simulator",
+        "pattern": {
+          "regexp": "^SIMULATOR_NEVER_MATCHES$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^NEVER$",
+          "endsPattern": "^\\[gdb\\] listening on "
+        }
+      },
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "sim: build + start (tm4c123)",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "firmware: build (tm4c123)",
+        "sim: start (tm4c123)"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "sim: build + start (stm32c031)",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "firmware: build (stm32c031)",
+        "sim: start (stm32c031)"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "sim: build + start (tm4c123, headless)",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "firmware: build (tm4c123)",
+        "sim: start (tm4c123, headless)"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "sim: stop",
+      "type": "shell",
+      "command": "echo Stopping simulator ${input:stopSim}",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "never"
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "stopSim",
+      "type": "command",
+      "command": "workbench.action.tasks.terminate",
+      "args": "terminateAll"
+    }
+  ]
+}
