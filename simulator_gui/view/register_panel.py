@@ -15,8 +15,12 @@ class RegisterPanel(QtWidgets.QWidget):
         self._table.setColumnCount(2)
         self._table.setHorizontalHeaderLabels(["Register", "Value"])
         self._table.verticalHeader().setVisible(False)
-        self._table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
-        self._table.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
+        self._table.setEditTriggers(
+            QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers
+        )
+        self._table.setSelectionMode(
+            QtWidgets.QAbstractItemView.SelectionMode.NoSelection
+        )
         self._table.setAlternatingRowColors(True)
 
         layout = QtWidgets.QVBoxLayout(self)
@@ -46,6 +50,6 @@ class RegisterPanel(QtWidgets.QWidget):
                 self._table.setItem(row, 1, value_item)
 
         for row, reg in enumerate(regs):
-            value_item = self._table.item(row, 1)
-            if value_item is not None:
-                value_item.setText(f"0x{reg.value:08X}")
+            cell = self._table.item(row, 1)
+            if cell is not None:
+                cell.setText(f"0x{reg.value:08X}")

@@ -22,8 +22,7 @@ class ComponentController(ABC):
         self._backend = backend
 
     @abstractmethod
-    def update(self, backend: SimulatorBackend) -> None:
-        ...
+    def update(self, backend: SimulatorBackend) -> None: ...
 
 
 class ComponentGraphicsItem(QtWidgets.QGraphicsObject):

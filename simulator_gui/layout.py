@@ -17,8 +17,7 @@ class LayoutEngine(ABC):
         bounds: Rect,
         item_size: tuple[int, int],
         spacing: int,
-    ) -> dict[str, Rect]:
-        ...
+    ) -> dict[str, Rect]: ...
 
 
 class FlowLayoutEngine(LayoutEngine):
@@ -47,7 +46,9 @@ class FlowLayoutEngine(LayoutEngine):
 
             if y + item_h > max_y:
                 # No more space; place remaining off-canvas but deterministic.
-                positions[comp.id] = Rect(max_x + spacing, max_y + spacing, item_w, item_h)
+                positions[comp.id] = Rect(
+                    max_x + spacing, max_y + spacing, item_w, item_h
+                )
                 continue
 
             positions[comp.id] = Rect(x, y, item_w, item_h)

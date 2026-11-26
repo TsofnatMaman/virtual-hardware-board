@@ -4,9 +4,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, get_args
 
-import yaml  # type: ignore[import-untyped]
+import yaml
+
+ScaleMode = Literal["fit", "stretch", "none"]
+Direction = Literal["input", "output", "bidirectional"]
+
+
+def _choice(value: Any, options: Any) -> Any:
+    """Return `value` if it is one of the Literal `options`, else raise."""
+    if value not in get_args(options):
+        raise ValueError(f"{value!r} is not one of {get_args(options)}")
+    return value
 
 
 @dataclass(frozen=True)
@@ -21,7 +31,7 @@ class Rect:
 class CanvasConfig:
     width: int
     height: int
-    scale_mode: Literal["fit", "stretch", "none"] = "fit"
+    scale_mode: ScaleMode = "fit"
 
 
 @dataclass(frozen=True)
@@ -37,7 +47,7 @@ class HardwareBinding:
     mask: int
     size: int = 4
     invert: bool = False
-    direction: Literal["input", "output", "bidirectional"] = "output"
+    direction: Direction = "output"
 
 
 @dataclass(frozen=True)
@@ -70,7 +80,7 @@ def _parse_canvas(value: dict[str, Any]) -> CanvasConfig:
     return CanvasConfig(
         width=int(value["width"]),
         height=int(value["height"]),
-        scale_mode=str(value.get("scale_mode", "fit")),
+        scale_mode=_choice(value.get("scale_mode", "fit"), ScaleMode),
     )
 
 
@@ -93,7 +103,7 @@ def _parse_binding(value: dict[str, Any]) -> HardwareBinding:
         mask=int(value.get("mask", 0)),
         size=int(value.get("size", 4)),
         invert=bool(value.get("invert", False)),
-        direction=str(value.get("direction", "output")),
+        direction=_choice(value.get("direction", "output"), Direction),
     )
 
 

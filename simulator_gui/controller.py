@@ -6,13 +6,13 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Iterable
 
+from simulator.interfaces.cpu import CpuSnapshot
 from simulator_gui.backend import SimulatorBackend
 from simulator_gui.components.base import ComponentController
-from simulator.interfaces.cpu import CpuSnapshot
 
 try:
-    import psutil  # type: ignore[import-untyped]
-except Exception:  # pragma: no cover - optional dependency
+    import psutil
+except ImportError:  # pragma: no cover - psutil is optional
     psutil = None
 
 

@@ -25,10 +25,10 @@ class ButtonView(ComponentGraphicsItem):
         self._on_color = QtGui.QColor(on_color)
         self._off_color = QtGui.QColor(off_color)
         self._border_color = QtGui.QColor(border_color)
-        self.setAcceptedMouseButtons(QtCore.Qt.LeftButton)
+        self.setAcceptedMouseButtons(QtCore.Qt.MouseButton.LeftButton)
 
     def paint(self, painter: QtGui.QPainter, _option, _widget=None) -> None:  # type: ignore[override]
-        painter.setRenderHint(QtGui.QPainter.Antialiasing, True)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, True)
         rect = self.boundingRect().adjusted(1, 1, -1, -1)
         color = self._on_color if self._pressed else self._off_color
         painter.setBrush(QtGui.QBrush(color))

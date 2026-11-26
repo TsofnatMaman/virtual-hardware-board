@@ -1,0 +1,11 @@
+# pip install pre-commit && pre-commit install
+# Runs the fast quality gates (see docs/quality-gates.md) before every commit.
+repos:
+  - repo: local
+    hooks:
+      - id: quality-gates
+        name: quality gates (pre-commit stage)
+        entry: python -m quality.run --stage pre-commit
+        language: system
+        pass_filenames: false
+        always_run: true

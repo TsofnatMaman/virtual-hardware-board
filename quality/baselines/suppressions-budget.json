@@ -1,0 +1,12 @@
+{
+  "simulator/core/builders.py": 1,
+  "simulator/debug/server.py": 1,
+  "simulator/utils/config_loader.py": 1,
+  "simulator_gui/components/base.py": 1,
+  "simulator_gui/components/button.py": 3,
+  "simulator_gui/components/led.py": 1,
+  "simulator_gui/components/switch.py": 2,
+  "simulator_gui/controller.py": 1,
+  "simulator_gui/view/board_canvas.py": 4,
+  "tools/cmsis_dap_proxy/proxy.py": 6
+}

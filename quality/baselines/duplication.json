@@ -1,0 +1,4 @@
+{
+  "simulator.stm32.board & simulator.stm32c031.board": 72,
+  "simulator.stm32c031.board & simulator.tm4c.board": 103
+}

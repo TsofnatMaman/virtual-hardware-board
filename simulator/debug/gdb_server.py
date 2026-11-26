@@ -15,6 +15,7 @@ from pathlib import Path
 
 from simulator import create_board
 from simulator.core.exceptions import SimulatorError
+from simulator.debug.defaults import DEFAULT_HOST, DEFAULT_PORT
 from simulator.debug.session import DebugSession, StopReason
 from simulator.interfaces.board import Board
 
@@ -114,7 +115,9 @@ class GdbTarget:
 class GdbRemoteServer:
     """Tiny single-client GDB remote server."""
 
-    def __init__(self, target: GdbTarget, host: str = "127.0.0.1", port: int = 3333):
+    def __init__(
+        self, target: GdbTarget, host: str = DEFAULT_HOST, port: int = DEFAULT_PORT
+    ):
         self.target = target
         self.host = host
         self.port = port
@@ -401,8 +404,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--firmware", default=None, help="Optional path to firmware .bin"
     )
-    parser.add_argument("--host", default="127.0.0.1", help="Bind host")
-    parser.add_argument("--port", type=int, default=3333, help="Bind port")
+    parser.add_argument("--host", default=DEFAULT_HOST, help="Bind host")
+    parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="Bind port")
     parser.add_argument(
         "--max-continue-steps",
         type=int,

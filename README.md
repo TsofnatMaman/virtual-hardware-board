@@ -15,7 +15,7 @@ pip install -r requirements.txt
 ### 2) Run the LED blink example
 
 ```bash
-python examples/run_led_blink.py
+python -m examples.run_led_blink
 ```
 
 ### 3) Run tests
@@ -31,7 +31,7 @@ pytest
 pip install -r requirements-gui.txt
 
 # run GUI (TM4C123 + LED blink firmware)
-python examples/run_gui.py
+python -m examples.run_gui
 
 # or run directly
 python -m simulator_gui --board tm4c123 --firmware firmware/led_blink/tm4c/firmware.bin
@@ -60,7 +60,7 @@ arm-none-eabi-gdb firmware/led_blink/tm4c/firmware.elf \
 python -m simulator_gui --board tm4c123 --gdb-port 3333
 
 # shortcut example script
-python examples/run_gui_with_gdb.py
+python -m examples.run_gui_with_gdb
 ```
 
 Supported protocol subset: register/memory read-write, binary memory write (`X`),
@@ -175,6 +175,8 @@ simulator_gui/
   view/         # Qt views/widgets
   backend.py    # adapter from board API to GUI controllers
 
+quality/        # quality gates (registry, runner, one module per gate)
+
 tests/
   core/         # core engine and registry tests
   interfaces/   # contract-level tests
@@ -247,8 +249,13 @@ all know about it.
 
 ## Quality checks
 
-Run all local checks (formatting, linting, typing, complexity, tests):
+The coding rules are in [CODING_GUIDELINES.md](CODING_GUIDELINES.md); they are enforced by
+quality gates that run locally, in CI and on a schedule
+([docs/quality-gates.md](docs/quality-gates.md)).
 
 ```bash
-python utils/run_quality_checks.py
+python -m quality.run --list                # every gate and its stage
+python -m quality.run --stage pre-commit    # the fast ones (also: pre-commit install)
+python -m quality.run                       # everything CI runs, including the tests
+python -m quality.run --fix                 # apply black/isort
 ```

@@ -289,6 +289,21 @@ class DebugSession:
                 return fault
             return self._watch_stop() or StopReason(reason="step", address=self.pc())
 
+    def _advance(self, first: bool) -> StopReason | None:
+        """One instruction of `run`: the stop it caused, if any (lock held)."""
+        if first:
+            if fault := self._reset_if_needed():
+                return fault
+        elif (pc := self.pc()) in self.breakpoints:
+            return StopReason(reason="breakpoint", address=pc)
+        return self._step_once() or self._watch_stop()
+
+    def _limit_stop(self) -> StopReason:
+        pc = self.pc()
+        return StopReason(
+            reason="breakpoint" if pc in self.breakpoints else "limit", address=pc
+        )
+
     def run(self, max_steps: int | None = None) -> StopReason:
         """Run until a breakpoint, halt request, fault or ``max_steps``.
 
@@ -299,25 +314,11 @@ class DebugSession:
         steps = 0
         while True:
             with self._lock:
-                if steps == 0:
-                    fault = self._reset_if_needed()
-                    if fault:
-                        return fault
-                else:
-                    pc = self.pc()
-                    if pc in self.breakpoints:
-                        return StopReason(reason="breakpoint", address=pc)
-                fault = self._step_once()
-                if fault:
-                    return fault
-                watch = self._watch_stop()
-                if watch:
-                    return watch
+                if stop := self._advance(first=steps == 0):
+                    return stop
                 steps += 1
                 if max_steps is not None and steps >= max_steps:
-                    pc = self.pc()
-                    reason = "breakpoint" if pc in self.breakpoints else "limit"
-                    return StopReason(reason=reason, address=pc)
+                    return self._limit_stop()
             if self._halt.is_set():
                 return StopReason(reason="halt", address=self.pc())
 

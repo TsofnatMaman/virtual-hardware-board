@@ -17,6 +17,7 @@ from simulator.core.board import (
     list_available_boards,
     verify_boards_registered,
 )
+from simulator.debug.defaults import DEFAULT_HOST, DEFAULT_PORT
 from simulator.debug.session import DebugSession
 
 
@@ -58,10 +59,13 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--board", required=True, help="Board name to simulate")
     parser.add_argument("--firmware", help="Firmware .bin to load into flash")
     parser.add_argument(
-        "--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)"
+        "--host", default=DEFAULT_HOST, help=f"Bind host (default: {DEFAULT_HOST})"
     )
     parser.add_argument(
-        "--port", type=int, default=3333, help="Bind port (default: 3333)"
+        "--port",
+        type=int,
+        default=DEFAULT_PORT,
+        help=f"Bind port (default: {DEFAULT_PORT})",
     )
     parser.add_argument(
         "--no-gui",

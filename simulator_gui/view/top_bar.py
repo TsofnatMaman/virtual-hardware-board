@@ -10,7 +10,7 @@ from simulator_gui.controller import SimulationState
 class TopBar(QtWidgets.QFrame):
     def __init__(self, board_name: str, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
-        self.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
 
         self._name_label = QtWidgets.QLabel(board_name)
         self._state_label = QtWidgets.QLabel("Paused")

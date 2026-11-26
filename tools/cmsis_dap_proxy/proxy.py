@@ -14,11 +14,9 @@ import os
 import socket
 import threading
 import time
+from ctypes import wintypes
 from dataclasses import dataclass
 from typing import Optional
-
-from ctypes import wintypes
-
 
 DAP_PACKET_SIZE = 64
 DAP_OK = 0x00
@@ -864,9 +862,7 @@ class CmsisDapEmulator:
             if self._run_active:
                 return
             self._run_active = True
-            self._run_thread = threading.Thread(
-                target=self._run_loop, daemon=True
-            )
+            self._run_thread = threading.Thread(target=self._run_loop, daemon=True)
             self._run_thread.start()
 
     def _stop_run_loop(self) -> None:
@@ -922,7 +918,9 @@ def run_proxy(args: argparse.Namespace) -> int:
         return 0
 
     with socket.create_server((args.listen_host, args.listen_port)) as server:
-        logging.info("Listening for driver on %s:%d", args.listen_host, args.listen_port)
+        logging.info(
+            "Listening for driver on %s:%d", args.listen_host, args.listen_port
+        )
         while True:
             conn, addr = server.accept()
             logging.info("Driver connected from %s:%d", addr[0], addr[1])
@@ -941,9 +939,7 @@ def run_proxy(args: argparse.Namespace) -> int:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="CMSIS-DAP v1 proxy (WIP)")
     parser.add_argument("--board", required=True, help="Board name (for DAP_Info)")
-    parser.add_argument(
-        "--listen-host", default="127.0.0.1", help="Proxy listen host"
-    )
+    parser.add_argument("--listen-host", default="127.0.0.1", help="Proxy listen host")
     parser.add_argument("--listen-port", type=int, default=7230)
     parser.add_argument("--packet-size", type=int, default=DAP_PACKET_SIZE)
     parser.add_argument(

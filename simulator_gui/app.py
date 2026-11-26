@@ -12,11 +12,17 @@ from PySide6 import QtWidgets
 
 from simulator import create_board, list_available_boards, verify_boards_registered
 from simulator.debug import GdbRemoteServer, GdbTarget
+from simulator.debug.defaults import DEFAULT_HOST
 from simulator_gui.backend import BoardBackend
 from simulator_gui.config import load_gui_config
 from simulator_gui.controller import SimulationController
 from simulator_gui.registry import default_registry
 from simulator_gui.view.main_window import MainWindow
+
+REGISTER_PANEL_WIDTH = 300  # the register table next to the board
+BARS_HEIGHT = 120  # top bar + status bar
+GDB_THREAD_NAME = "sim-gdb-server"
+GDB_JOIN_TIMEOUT_S = 1.0
 
 
 def _available_boards() -> list[str]:
@@ -25,6 +31,7 @@ def _available_boards() -> list[str]:
     if not boards:
         raise RuntimeError("No boards registered")
     return boards
+
 
 BOARD_NAME_TO_KEY = {
     "STM32F4": "stm32f4",
@@ -53,7 +60,7 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     )
     parser.add_argument(
         "--gdb-host",
-        default="127.0.0.1",
+        default=DEFAULT_HOST,
         help="Bind host for in-process GDB server",
     )
     parser.add_argument(
@@ -73,6 +80,39 @@ def _resolve_board_key(board_key: str | None, board_name: str | None) -> str | N
     return None
 
 
+def _make_board(args: argparse.Namespace):
+    """The board named on the command line, with `--firmware` loaded."""
+    board = create_board(args.board)
+    if args.firmware:
+        board.address_space.flash.load_image(Path(args.firmware).read_bytes())
+        board.reset()
+    return board
+
+
+def _load_layout(args: argparse.Namespace, board, board_key: str | None):
+    key = _resolve_board_key(board_key, getattr(board, "name", None))
+    if key is None:
+        raise ValueError("Unable to resolve board key for GUI config.")
+    return load_gui_config(
+        args.gui_config or Path(__file__).parent / "boards" / f"{key}.yaml"
+    )
+
+
+def _start_gdb_server(board, args: argparse.Namespace, lock):
+    """Serve GDB in a background thread; returns (stop event, thread)."""
+    stop = threading.Event()
+    target = GdbTarget(board, max_continue_steps=args.gdb_max_continue_steps, lock=lock)
+    server = GdbRemoteServer(target=target, host=args.gdb_host, port=args.gdb_port)
+    thread = threading.Thread(
+        target=server.serve_forever,
+        kwargs={"stop_event": stop},
+        daemon=True,
+        name=GDB_THREAD_NAME,
+    )
+    thread.start()
+    return stop, thread
+
+
 def run_gui(
     argv: list[str] | None = None,
     *,
@@ -82,79 +122,36 @@ def run_gui(
     external_clock: bool = False,
 ) -> int:
     args = _parse_args(argv if argv is not None else sys.argv[1:])
-
     if board is None:
-        board = create_board(args.board)
-        board_key = args.board
+        board, board_key = _make_board(args), args.board
+    layout = _load_layout(args, board, board_key)
+    instances = [default_registry().create(c) for c in layout.components]
 
-        if args.firmware:
-            firmware = Path(args.firmware).read_bytes()
-            board.address_space.flash.load_image(firmware)
-            board.reset()
-
-    resolved_key = _resolve_board_key(board_key, getattr(board, "name", None))
-    if resolved_key is None:
-        raise ValueError("Unable to resolve board key for GUI config.")
-
-    config_path = args.gui_config
-    if config_path is None:
-        config_path = Path(__file__).parent / "boards" / f"{resolved_key}.yaml"
-    gui_config = load_gui_config(config_path)
-
-    registry = default_registry()
-    component_instances = [registry.create(c) for c in gui_config.components]
-    controllers = [c.controller for c in component_instances]
-
-    if lock is None and args.gdb_port is not None:
-        lock = threading.RLock()
-    # With a debugger attached it owns the clock: the GUI only repaints.
-    external_clock = external_clock or args.gdb_port is not None
-
-    backend = BoardBackend(board, lock=lock)
-    controller = SimulationController(backend, controllers)
-
-    gdb_stop_event = None
-    gdb_thread = None
-    if args.gdb_port is not None:
-        gdb_stop_event = threading.Event()
-        gdb_server = GdbRemoteServer(
-            target=GdbTarget(
-                board,
-                max_continue_steps=args.gdb_max_continue_steps,
-                lock=lock,
-            ),
-            host=args.gdb_host,
-            port=args.gdb_port,
-        )
-        gdb_thread = threading.Thread(
-            target=gdb_server.serve_forever,
-            kwargs={"stop_event": gdb_stop_event},
-            daemon=True,
-            name="sim-gdb-server",
-        )
-        gdb_thread.start()
+    debugger = args.gdb_port is not None
+    lock = lock or (threading.RLock() if debugger else None)
+    controller = SimulationController(
+        BoardBackend(board, lock=lock), [i.controller for i in instances]
+    )
+    gdb = _start_gdb_server(board, args, lock) if debugger else None
 
     # Qt's event loop blocks Python's SIGINT handling; restore the default so
     # Ctrl+C in the terminal quits the simulator as users expect.
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     app = QtWidgets.QApplication(sys.argv)
+    # With a debugger attached it owns the clock: the GUI only repaints.
     window = MainWindow(
-        controller,
-        gui_config,
-        component_instances,
-        cycles_per_tick=args.cycles,
-        tick_ms=args.tick_ms,
-        external_clock=external_clock,
+        controller, layout, instances, cycles_per_tick=args.cycles, tick_ms=args.tick_ms,
+        external_clock=external_clock or debugger,
+    )  # fmt: skip
+    window.resize(
+        layout.canvas.width + REGISTER_PANEL_WIDTH, layout.canvas.height + BARS_HEIGHT
     )
-    window.resize(gui_config.canvas.width + 300, gui_config.canvas.height + 120)
     window.show()
     exit_code = app.exec()
 
-    if gdb_stop_event is not None:
-        gdb_stop_event.set()
-    if gdb_thread is not None:
-        gdb_thread.join(timeout=1.0)
-
+    if gdb:
+        gdb[0].set()
+        gdb[1].join(timeout=GDB_JOIN_TIMEOUT_S)
     return exit_code
 
 

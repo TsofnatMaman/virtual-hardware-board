@@ -16,7 +16,7 @@ from simulator import create_board  # noqa: E402
 from simulator.debug import GdbRemoteServer, GdbTarget  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).parent))
-from conftest import GDB, needs_gdb, needs_toolchain  # noqa: E402
+from toolchain import GDB, needs_gdb, needs_toolchain  # noqa: E402
 
 pytestmark = [pytest.mark.integration, needs_toolchain, needs_gdb]
 

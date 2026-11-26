@@ -17,3 +17,7 @@ pylint>=2.0
 # Complexity + dead code
 radon>=6.0
 vulture>=2.0
+
+# Security
+bandit>=1.7
+pip-audit>=2.7

@@ -80,3 +80,6 @@ dmypy.json
 
 # Logs
 *.log
+
+# local clone target of tools/cmsis_dap_vhid/import_vhidmini2.ps1
+tools/cmsis_dap_vhid/windows-driver-samples/

@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import ContextManager
 from contextlib import nullcontext
-from typing import Protocol
+from dataclasses import dataclass
+from typing import ContextManager, Protocol
 
 from simulator.interfaces.board import Board
 from simulator.interfaces.cpu import CpuSnapshot
@@ -15,23 +14,17 @@ class SimulatorBackend(Protocol):
     """Minimal simulator backend required by the GUI."""
 
     @property
-    def board_name(self) -> str:
-        ...
+    def board_name(self) -> str: ...
 
-    def step(self, cycles: int) -> None:
-        ...
+    def step(self, cycles: int) -> None: ...
 
-    def reset(self) -> None:
-        ...
+    def reset(self) -> None: ...
 
-    def read(self, address: int, size: int) -> int:
-        ...
+    def read(self, address: int, size: int) -> int: ...
 
-    def write(self, address: int, size: int, value: int) -> None:
-        ...
+    def write(self, address: int, size: int, value: int) -> None: ...
 
-    def cpu_snapshot(self) -> CpuSnapshot:
-        ...
+    def cpu_snapshot(self) -> CpuSnapshot: ...
 
 
 @dataclass

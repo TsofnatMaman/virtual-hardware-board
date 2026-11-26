@@ -8,6 +8,8 @@
 BOARD ?= tm4c123
 # No optimisation: variables and functions stay easy to debug (use OPT=-Os for size).
 OPT ?= -O0
+# Extra compiler flags from the command line, e.g. EXTRA_CFLAGS=-Werror in CI.
+EXTRA_CFLAGS ?=
 TOOLCHAIN ?= arm-none-eabi-
 
 ifeq ($(BOARD),tm4c123)
@@ -24,7 +26,7 @@ SRCS    := board/startup.c $(wildcard src/*.c)
 ELF     := build/app.elf
 BIN     := build/app.bin
 CFLAGS  := -mcpu=$(CPU) -mthumb $(OPT) -g -ffreestanding -nostdlib -Wall -Wextra \
-           -Iboard/$(BOARD) -Isrc
+           -Iboard/$(BOARD) -Isrc $(EXTRA_CFLAGS)
 LDFLAGS := -T board/$(BOARD)/linker.ld -Wl,-Map=build/app.map -Wl,--gc-sections
 
 all: $(BIN)

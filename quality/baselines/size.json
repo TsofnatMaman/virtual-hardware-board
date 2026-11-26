@@ -1,0 +1,8 @@
+{
+  "simulator/tm4c/gpio.py::__init__:lines": 52,
+  "tools/cmsis_dap_proxy/proxy.py::_cmd_transfer:complexity": 11,
+  "tools/cmsis_dap_proxy/proxy.py::_cmd_transfer:lines": 58,
+  "tools/cmsis_dap_proxy/proxy.py::_cmd_transfer_block:lines": 52,
+  "tools/cmsis_dap_proxy/proxy.py::_info_payload:complexity": 15,
+  "tools/cmsis_dap_proxy/proxy.py:file-lines": 974
+}

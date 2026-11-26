@@ -13,7 +13,14 @@ pytest.importorskip("unicorn")
 from simulator import create_board  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).parent))
-from conftest import ROOT, load_and_reset, needs_toolchain, watch_register  # noqa: E402
+from toolchain import (  # noqa: E402
+    ROOT,
+    TEMPLATE,
+    WARNINGS_ARE_ERRORS,
+    load_and_reset,
+    needs_toolchain,
+    watch_register,
+)
 
 pytestmark = [pytest.mark.integration, needs_toolchain]
 
@@ -148,3 +155,21 @@ def test_build_fails_loudly_for_an_unknown_board(tmp_path):
         check=False,
     )
     assert result.returncode != 0 and "Unknown BOARD" in result.stderr  # nosec B101
+
+
+def test_a_compiler_warning_fails_the_build(tmp_path):
+    import shutil
+
+    project = tmp_path / "project"
+    shutil.copytree(TEMPLATE, project)
+    (project / "src" / "main.c").write_text(
+        '#include "tm4c.h"\nint main(void)\n{\n    int unused;\n    return 0;\n}\n'
+    )
+    result = subprocess.run(
+        ["make", "BOARD=tm4c123", f"EXTRA_CFLAGS={WARNINGS_ARE_ERRORS}"],
+        cwd=project,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode != 0 and "unused" in result.stderr

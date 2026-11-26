@@ -10,7 +10,7 @@ from simulator_gui.controller import StatusSample
 class StatusBar(QtWidgets.QFrame):
     def __init__(self, parent: QtWidgets.QWidget | None = None):
         super().__init__(parent)
-        self.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
 
         self._cpu_label = QtWidgets.QLabel("CPU: --")
         self._mem_label = QtWidgets.QLabel("Mem: --")

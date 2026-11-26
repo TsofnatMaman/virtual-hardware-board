@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # the growth check compares baselines with the base branch
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -37,8 +39,12 @@ jobs:
           pip install -r requirements-gui.txt
           pip install -r requirements-dev.txt
 
-      - name: Run quality checks and tests
-        run: python utils/run_quality_checks.py
+      - name: Run quality gates and tests
+        run: python -m quality.run --strict
+
+      - name: Baselines must not grow
+        if: github.event_name == 'pull_request'
+        run: python -m quality.run --growth-check --base origin/${{ github.base_ref }}
 
       - name: Send coverage to Codacy
         env:

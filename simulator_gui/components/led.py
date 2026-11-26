@@ -31,7 +31,7 @@ class LedView(ComponentGraphicsItem):
             self.update()
 
     def paint(self, painter: QtGui.QPainter, _option, _widget=None) -> None:  # type: ignore[override]
-        painter.setRenderHint(QtGui.QPainter.Antialiasing, True)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, True)
         rect = self.boundingRect().adjusted(1, 1, -1, -1)
         color = self._on_color if self._on else self._off_color
 

@@ -18,8 +18,8 @@ class BoardCanvas(QtWidgets.QGraphicsView):
         self._scene = QtWidgets.QGraphicsScene(self)
         self.setScene(self._scene)
         self.setRenderHints(
-            QtGui.QPainter.Antialiasing
-            | QtGui.QPainter.SmoothPixmapTransform
+            QtGui.QPainter.RenderHint.Antialiasing
+            | QtGui.QPainter.RenderHint.SmoothPixmapTransform
         )
         self._background_item: QtWidgets.QGraphicsPixmapItem | None = None
         self._components: list[ComponentInstance] = []
@@ -31,14 +31,14 @@ class BoardCanvas(QtWidgets.QGraphicsView):
         if path.exists():
             pixmap = QtGui.QPixmap(str(path))
         else:
-            pixmap = QtGui.QPixmap(self._config.canvas.width, self._config.canvas.height)
+            pixmap = QtGui.QPixmap(
+                self._config.canvas.width, self._config.canvas.height
+            )
             pixmap.fill(QtGui.QColor("#1f1f1f"))
 
         self._scene.clear()
         self._background_item = self._scene.addPixmap(pixmap)
-        self._scene.setSceneRect(
-            QtCore.QRectF(0, 0, pixmap.width(), pixmap.height())
-        )
+        self._scene.setSceneRect(QtCore.QRectF(0, 0, pixmap.width(), pixmap.height()))
 
     def set_components(self, components: list[ComponentInstance]) -> None:
         self._components = components
@@ -87,6 +87,10 @@ class BoardCanvas(QtWidgets.QGraphicsView):
     def resizeEvent(self, event: QtGui.QResizeEvent) -> None:  # type: ignore[override]
         super().resizeEvent(event)
         if self._config.canvas.scale_mode == "fit":
-            self.fitInView(self._scene.sceneRect(), QtCore.Qt.KeepAspectRatio)
+            self.fitInView(
+                self._scene.sceneRect(), QtCore.Qt.AspectRatioMode.KeepAspectRatio
+            )
         elif self._config.canvas.scale_mode == "stretch":
-            self.fitInView(self._scene.sceneRect(), QtCore.Qt.IgnoreAspectRatio)
+            self.fitInView(
+                self._scene.sceneRect(), QtCore.Qt.AspectRatioMode.IgnoreAspectRatio
+            )

@@ -49,7 +49,12 @@ max-line-length = 88
 extend-ignore = ["E203", "W503"]
 exclude = [".git", "__pycache__", ".venv", "venv"]
 
+[[tool.mypy.overrides]]
+module = ["yaml", "psutil", "radon.*"]  # no type stubs installed
+ignore_missing_imports = true
+
 [tool.pylint.MASTER]
+extension-pkg-allow-list = ["PySide6"]
 disable = [
     "missing-docstring",
     "invalid-name",
@@ -58,14 +63,27 @@ disable = [
     "too-few-public-methods",
     "no-name-in-module",
     "unused-argument",
-    "duplicate-code",
     "mixed-line-endings",
     "unnecessary-ellipsis",
+    # limits owned by quality/gates/size.py (one source of truth, ratcheted):
+    "too-many-return-statements",
+    "too-many-branches",
+    "too-many-statements",
     "too-many-instance-attributes",
     "too-many-positional-arguments",
     "too-many-locals",
     "protected-access",
 ]
 
+[tool.pylint.TYPECHECK]
+generated-members = ["connect"]  # Qt signals are connected with signal.connect(...)
+
 [tool.pylint.DESIGN]
 max-args = 7
+
+[tool.pylint.SIMILARITIES]
+min-similarity-lines = 8
+ignore-comments = true
+ignore-docstrings = true
+ignore-imports = true
+ignore-signatures = true

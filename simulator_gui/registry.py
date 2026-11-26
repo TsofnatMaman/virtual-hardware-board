@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Dict
 
+from simulator_gui.components.base import ComponentController, ComponentGraphicsItem
 from simulator_gui.components.button import ButtonController, ButtonView
 from simulator_gui.components.led import LedController, LedView
 from simulator_gui.components.switch import SwitchController, SwitchView
@@ -13,8 +14,8 @@ from simulator_gui.config import ComponentConfig
 
 @dataclass(frozen=True)
 class ComponentInstance:
-    view: object
-    controller: object
+    view: ComponentGraphicsItem
+    controller: ComponentController
     config: ComponentConfig
 
 

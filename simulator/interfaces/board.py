@@ -9,7 +9,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from simulator.core.memmap import AddressSpace
 from simulator.interfaces.clock import IClock
 from simulator.interfaces.cpu import ICPU
 from simulator.interfaces.interrupt_controller import IInterruptController
@@ -17,6 +16,7 @@ from simulator.interfaces.memory_map import IMemoryMap
 from simulator.interfaces.peripheral import Peripheral
 
 if TYPE_CHECKING:
+    from simulator.core.memmap import AddressSpace
     from simulator.interfaces.memory_access import MemoryAccessModel
 
 
