@@ -39,7 +39,7 @@ pre-commit hook and both workflows read it, so they cannot drift apart.
 | `suppressions-named` | Honest suppressions | pre-commit, ci | no bare `# noqa` / `# type: ignore` |
 | `suppressions-budget` | Honest suppressions | pre-commit, ci | number of suppressions per file (ratchet) |
 | `secrets` | Security | pre-commit, ci | tokens, private keys and hard-coded secrets |
-| `duplication` | No duplication | ci | copy-pasted blocks across modules, pylint duplicate-code (ratchet) |
+| `duplication` | No duplication | ci | copy-pasted blocks across modules, pylint duplicate-code |
 | `bandit` | Security | ci | medium and high severity security findings |
 | `lint` | Clean code | ci | pylint |
 | `types` | Typed | ci | mypy |
@@ -62,7 +62,8 @@ with real tools. The gates follow its actual risks:
   `gate-scope` made "this directory is checked" a rule. New directories are caught the day
   they appear.
 * **Copy-paste between boards** is the natural failure mode of "one more board". `duplication`
-  keeps it from growing; the existing board duplication is the first item of the debt list.
+  rejects it; the three board classes that used to repeat their wiring are now one
+  `ConfiguredBoard` plus a spec per chip, and the gate is absolute.
 * **Constants scattered through protocol code** (packet markers, register bits) make the
   debugger servers hard to change; `magic-values` stops new ones and `size` keeps the
   functions that use them small.
@@ -87,7 +88,7 @@ with real tools. The gates follow its actual risks:
 
 ## Ratchets
 
-`magic-values`, `size`, `suppressions-budget` and `duplication` start from the debt that
+`magic-values`, `size` and `suppressions-budget` start from the debt that
 existed when they were introduced (`quality/baselines/*.json`, one number per file or
 function). The baseline can only shrink:
 

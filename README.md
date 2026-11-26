@@ -194,17 +194,31 @@ tests/
 
 ## Adding a new board
 
-1. Create a new module under `simulator/<vendor_or_board>/`.
-2. Implement `Board` interface (`name`, `read/write`, `step`, `reset`, etc.).
-3. Add `config.yaml` and parse it through `simulator.utils.config_loader`.
-4. Register board in module `__init__.py` with a unique key:
+1. Create a package `simulator/<myboard>/` with a `config.yaml` (memory map, GPIO ports, pins,
+   system control). The loader (`simulator.utils.config_loader`) validates it.
+2. If the chip's GPIO or register layout differs from an existing one, add its GPIO
+   peripheral and memory-access model next to it; otherwise reuse the existing ones.
+3. Describe the board with a `BoardSpec` on a `ConfiguredBoard` subclass (all wiring is in
+   `simulator/core/configured_board.py`; see `simulator/stm32/board.py` for a complete
+   example of about ten lines):
+
+   ```python
+   class MyBoard(ConfiguredBoard):
+       spec = BoardSpec(
+           key="myboard", name="MyBoard", config_path=Path(__file__).parent / "config.yaml",
+           gpio_kind="stm32", gpio_class=STM32GPIO, access_model=STM32F4DirectAccessModel,
+       )
+   ```
+
+4. Register it in the package `__init__.py` with its key:
 
    ```python
    from simulator.core.board import register_board
-   register_board("myboard", MyBoard)
+   register_board(MyBoard.spec.key, MyBoard)
    ```
 
-5. Add board-level tests under `tests/<myboard>/`.
+5. Add GPIO/memory-model tests under `tests/<myboard>/` if you added new peripherals;
+   `tests/core/test_configured_board.py` covers the shared wiring (add the key to its table).
 6. (Optional) add GUI config in `simulator_gui/boards/<myboard>.yaml`. A
    `background_image` (its size must equal `canvas`) gives the board a picture, and
    each component's `position` places an LED/switch on it. See

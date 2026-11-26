@@ -103,9 +103,9 @@ only shrink (see *Ratchets*).
   `simulator/core/builders.py`) and is parametrised by the board configuration.
 * Tests share setup through fixtures (`tests/**/conftest.py`), not copy-paste.
 
-Enforced: `duplication` (pylint duplicate-code, 8 lines). **Known debt:** the three board
-classes repeat their wiring (see `quality/baselines/duplication.json`); the next
-refactor is one configurable board class.
+Enforced: `duplication` (pylint duplicate-code, 8 lines), an absolute gate: there is no
+duplication debt left. The board wiring lives once in `ConfiguredBoard`; a board is a
+`BoardSpec` of about ten lines.
 
 ## Clean code
 
@@ -171,8 +171,8 @@ Unused code is removed, not kept "for later" (`dead-code`, vulture at 90 % confi
 
 Adding any of these must be a small, local change. Tests fail when a step is forgotten.
 
-* **A board**: `simulator/<board>/` (one class + `config.yaml`) registered with
-  `register_board`; `simulator_gui/boards/<board>.yaml` with a background image of the
+* **A board**: `simulator/<board>/` (a `BoardSpec` + `config.yaml`; new GPIO or register
+  models only if the chip needs them) registered with `register_board`; `simulator_gui/boards/<board>.yaml` with a background image of the
   same size as `canvas`; `firmware/boards/<board>/`; the C template (`board/`, `Makefile`
   branch, `build` task, debug configuration). `tests/integration/test_vscode_and_board_consistency.py`
   lists what is missing.
@@ -195,7 +195,7 @@ file or function*. The rule is a ratchet:
   (`--growth-check`) and, with `--strict`, one that forgot to lower it;
 * when a baseline reaches zero, delete its file and make the gate absolute.
 
-Largest items today: the board wiring duplication, `tools/cmsis_dap_proxy/proxy.py`
+Largest items today: `tools/cmsis_dap_proxy/proxy.py`
 (work in progress for Keil), numeric constants in the debug and board modules.
 
 ## C firmware

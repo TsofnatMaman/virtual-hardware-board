@@ -70,7 +70,12 @@ GATES = (
     # ---- clean code: named values, small functions, honest suppressions
     Gate("magic-values", "Named values", FAST, check=magic.check, ratchet=True),
     Gate("size", "Small and simple", FAST, check=size.check, ratchet=True),
-    Gate("duplication", "No duplication", (CI,), check=duplication.check, ratchet=True),
+    Gate(
+        "duplication",
+        "No duplication",
+        (CI,),
+        check=duplication.check,
+    ),
     Gate("suppressions-named", "Honest suppressions", FAST, check=suppressions.blanket),
     Gate(
         "suppressions-budget",
