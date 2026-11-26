@@ -124,12 +124,6 @@ class TestHygiene:
         git(git_repo, "add", ".")
         assert hygiene.check(Tree.from_git(git_repo)) == []
 
-    def test_listed_large_file_passes(self, git_repo):
-        (git_repo / "docs").mkdir()
-        (git_repo / "docs/tutorial.mp4").write_bytes(b"x" * 600_000)
-        git(git_repo, "add", ".")
-        assert hygiene.check(Tree.from_git(git_repo)) == []
-
 
 # ------------------------------------------------------------------ clean code
 class TestMagicValues:

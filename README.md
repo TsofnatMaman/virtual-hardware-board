@@ -121,9 +121,7 @@ only repaints.
 VS Code on a virtual board. Part 1 installs the simulator, part 2 creates a C project from the
 template and debugs it on the TM4C123, part 3 repeats the workflow on the STM32F4 Discovery.
 
-<video src="https://github.com/TsofnatMaman/virtual-hardware-board/raw/main/docs/tutorial.mp4" controls width="720"></video>
-
-If the player does not appear, open [`docs/tutorial.mp4`](docs/tutorial.mp4) directly.
+<!-- Paste the GitHub user-attachments URL of the tutorial video on its own line here: GitHub then shows an inline player. -->
 
 The repo ships `.vscode/launch.json` and `tasks.json`. Prerequisites: the
 **Cortex-Debug** extension (recommended automatically when you open the folder),
