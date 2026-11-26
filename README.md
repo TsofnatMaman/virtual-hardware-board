@@ -1,3 +1,13 @@
+
+
+https://github.com/user-attachments/assets/5f7c3141-9066-43c2-8d48-7be2faa9d80c
+
+
+
+https://github.com/user-attachments/assets/f050386d-2b0e-40d6-ae5f-07404a08975b
+
+
+
 # Virtual Hardware Board
 
 A Python-based virtual hardware platform for simulating Cortex-M boards, loading
@@ -121,7 +131,7 @@ only repaints.
 VS Code on a virtual board. Part 1 installs the simulator, part 2 creates a C project from the
 template and debugs it on the TM4C123, part 3 repeats the workflow on the STM32F4 Discovery.
 
-<!-- Paste the GitHub user-attachments URL of the tutorial video on its own line here: GitHub then shows an inline player. -->
+https://github.com/user-attachments/assets/6f823a3b-30b4-4865-92b4-15926950b2f9
 
 The repo ships `.vscode/launch.json` and `tasks.json`. Prerequisites: the
 **Cortex-Debug** extension (recommended automatically when you open the folder),
