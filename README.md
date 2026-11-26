@@ -1,13 +1,3 @@
-
-
-https://github.com/user-attachments/assets/5f7c3141-9066-43c2-8d48-7be2faa9d80c
-
-
-
-https://github.com/user-attachments/assets/f050386d-2b0e-40d6-ae5f-07404a08975b
-
-
-
 # Virtual Hardware Board
 
 A Python-based virtual hardware platform for simulating Cortex-M boards, loading
