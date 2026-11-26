@@ -78,6 +78,21 @@ vector table like real hardware reset.
 For VS Code, create `.vscode/launch.json` with a `cppdbg` or Cortex-Debug
 configuration that points to `127.0.0.1:3333`.
 
+### How the IDE finds the simulator (the port)
+
+The IDE does not discover the simulator: the address is configured on both sides
+and must match. The simulator listens on `--gdb-port` (default host `127.0.0.1`,
+change with `--gdb-host`), and the IDE connects to it, e.g. in Cortex-Debug:
+
+```json
+"servertype": "external",
+"gdbTarget": "127.0.0.1:3333"
+```
+
+(`miDebuggerServerAddress` in a `cppdbg` configuration.) The simulator board is
+chosen with `--board`; a debug configuration only decides which firmware is built.
+See [`templates/c_project/README.md`](templates/c_project/README.md) for details.
+
 ### Keil µVision (CMSIS-DAP, WIP, Windows)
 
 Keil is bridged through a virtual CMSIS-DAP HID device:
@@ -189,6 +204,19 @@ tests/
 
 5. Add board-level tests under `tests/<myboard>/`.
 6. (Optional) add GUI config in `simulator_gui/boards/<myboard>.yaml`.
+
+To write and debug C code for the new board in VS Code, also add it to the C side:
+
+7. `firmware/boards/<myboard>/` (linker script + register header) and a branch for
+   it in `firmware/Makefile`.
+8. `templates/c_project/`: `board/<myboard>/`, a `Makefile` branch, a
+   `build (<myboard>)` task in `.vscode/tasks.json` and a debug configuration in
+   `.vscode/launch.json` (checklist in `templates/c_project/README.md`).
+9. This repo's own `.vscode/launch.json` / `tasks.json` if you want F5 for the
+   bundled examples.
+
+Start the simulator with `--board <myboard>` and keep `--gdb-port` equal to the
+`gdbTarget` port in `launch.json`.
 
 ## Quality checks
 

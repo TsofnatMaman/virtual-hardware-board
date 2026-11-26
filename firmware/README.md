@@ -57,6 +57,15 @@ If you run from inside `firmware/`, drop the `firmware/` prefix in the paths.
 
 This produces `firmware.bin` next to the selected `main.c` by default.
 
+### Adding a board
+
+1. Create `boards/<board>/linker.ld` and a register header (copy an existing board;
+   the `FLASH`/`SRAM` origins must match the simulator's memory map).
+2. Add a branch for it in `Makefile` (`CPU := ...`, `BOARD_DIR := ...`) and extend the
+   error message.
+3. Add the same files to `templates/c_project/` and a debug configuration to its
+   `.vscode/launch.json` (see the template README).
+
 ### Running in GUI (STM32C031)
 
 ```powershell
