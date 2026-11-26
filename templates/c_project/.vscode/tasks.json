@@ -1,0 +1,23 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build (tm4c123)",
+      "type": "shell",
+      "command": "make BOARD=tm4c123",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "build (stm32c031)",
+      "type": "shell",
+      "command": "make BOARD=stm32c031",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    }
+  ]
+}

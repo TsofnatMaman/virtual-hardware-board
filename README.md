@@ -115,6 +115,13 @@ The repo ships `.vscode/launch.json` and `tasks.json`. Prerequisites: the
 4. Set breakpoints/watchpoints in C, step, continue, **Pause** (Ctrl+C), and watch
    the LEDs in the simulator window. Stopping the session closes the simulator.
 
+### Separate windows: simulator in one, your C project in another
+
+To debug your own C project without opening this repo, copy
+`templates/c_project/` anywhere and follow its README: start the simulator with
+`python -m simulator_gui --board tm4c123 --gdb-port 3333` in one window, open the
+copied project in another VS Code window and press F5.
+
 ### VS Code step-by-step (C firmware + visual simulator)
 
 1. Build firmware + ELF:

@@ -1,0 +1,41 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug on simulator (TM4C123)",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "external",
+      "gdbTarget": "127.0.0.1:3333",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/app.elf",
+      "runToEntryPoint": "main",
+      "overrideLaunchCommands": [
+        "-target-download",
+        "interpreter-exec console \"monitor reset\""
+      ],
+      "overrideRestartCommands": [
+        "interpreter-exec console \"monitor reset\""
+      ],
+      "preLaunchTask": "build (tm4c123)"
+    },
+    {
+      "name": "Debug on simulator (STM32C031)",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "external",
+      "gdbTarget": "127.0.0.1:3333",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/app.elf",
+      "runToEntryPoint": "main",
+      "overrideLaunchCommands": [
+        "-target-download",
+        "interpreter-exec console \"monitor reset\""
+      ],
+      "overrideRestartCommands": [
+        "interpreter-exec console \"monitor reset\""
+      ],
+      "preLaunchTask": "build (stm32c031)"
+    }
+  ]
+}
