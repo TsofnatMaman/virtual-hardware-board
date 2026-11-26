@@ -135,7 +135,24 @@ class GdbRemoteServer:
         conn.sendall(b"+")
         return payload
 
+    def _handle_monitor(self, payload: str) -> str:
+        """Handle ``qRcmd`` (gdb ``monitor ...``) commands."""
+        try:
+            command = bytes.fromhex(payload[len("qRcmd,") :]).decode("ascii").strip()
+        except ValueError:
+            return "E01"
+        words = command.split()
+        if not words:
+            return "OK"
+        if words[0] in {"reset", "halt"}:
+            if words[0] == "reset":
+                self.target.restart()
+            return "OK"
+        return ""
+
     def _handle_query(self, payload: str) -> str:
+        if payload.startswith("qRcmd,"):
+            return self._handle_monitor(payload)
         if payload.startswith("qSupported"):
             return "PacketSize=4000;swbreak+;hwbreak-"
         if payload in {"qAttached", "qC"}:

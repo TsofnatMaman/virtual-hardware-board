@@ -79,6 +79,17 @@ class FlashMemory(MemoryRegion):
             )
         self._data[: len(data)] = data
 
+    def program(self, address: int, data: bytes) -> None:
+        """Program bytes at an absolute address (debugger/flash-loader path).
+
+        The CPU bus still treats flash as read-only; this models an external
+        programmer. Call ``Board.reset()`` afterwards so the CPU sees the data.
+        """
+        if not self.range.contains_range(address, len(data)):
+            raise MemoryBoundsError(address, len(data), self.name)
+        offset = address - self.base
+        self._data[offset : offset + len(data)] = data
+
     def read(self, address: int, size: int) -> int:
         if not self.range.contains_range(address, size):
             raise MemoryBoundsError(address, size, self.name)

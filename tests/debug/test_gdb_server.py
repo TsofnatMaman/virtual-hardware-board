@@ -37,10 +37,16 @@ class DummyFlash:
     def __init__(self):
         self.loaded = b""
         self.base = 0x00000000
-        self.size = 0x00080000
+        self.size = 0x00001000
 
     def load_image(self, image: bytes) -> None:
         self.loaded = image
+
+    def contains(self, address: int) -> bool:
+        return self.base <= address < self.base + self.size
+
+    def program(self, address: int, data: bytes) -> None:
+        self.programmed = (address, data)
 
 
 class DummyAddressSpace:
@@ -417,3 +423,13 @@ def test_x_packet_escaped_binary_write():
     encoded = "A}]" + chr(0x7D) + chr(0x03)
     assert server._handle_packet(f"X3000,3:{encoded}") == "OK"  # nosec B101
     assert server._handle_packet("m3000,3") == "417d23"  # nosec B101
+
+
+def test_monitor_reset_halt_and_unknown_commands():
+    board = DummyBoard()
+    server = GdbRemoteServer(GdbTarget(board=board))
+    assert server._handle_packet("qRcmd," + b"reset halt".hex()) == "OK"  # nosec B101
+    assert board.reset_calls == 1  # nosec B101
+    assert server._handle_packet("qRcmd," + b"halt".hex()) == "OK"  # nosec B101
+    assert server._handle_packet("qRcmd," + b"bogus".hex()) == ""  # nosec B101
+    assert server._handle_packet("qRcmd,zz") == "E01"  # nosec B101

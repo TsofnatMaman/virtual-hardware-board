@@ -63,7 +63,7 @@ python -m simulator_gui --board tm4c123 --gdb-port 3333
 python examples/run_gui_with_gdb.py
 ```
 
-Supported protocol subset: register/memory read-write, binary memory write (`X`), `step`,
+Supported protocol subset: register/memory read-write, binary memory write (`X`), `monitor reset`, `step`,
 `continue`, and software breakpoints (`Z0/z0`).
 
 In both headless and GUI GDB modes, `--firmware` is optional: your IDE/GDB can upload

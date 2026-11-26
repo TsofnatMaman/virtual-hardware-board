@@ -109,8 +109,11 @@ def main() -> int:
         )
 
     board = create_board(args.board)
-    _load_firmware(board, args.firmware)
-    board.reset()
+    if args.firmware:
+        _load_firmware(board, args.firmware)
+        board.reset()
+    # Without --firmware the debugger downloads the program; the session
+    # resets the board on the first run/step after flash is programmed.
 
     lock = threading.RLock()
     session = DebugSession(board, lock=lock)

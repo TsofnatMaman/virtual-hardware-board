@@ -75,8 +75,8 @@ class DebugSession:
 
     def _ensure_runtime_reset(self) -> None:
         if self.needs_reset:
-            self.board.reset()
             self.needs_reset = False
+            self.board.reset()
 
     # -- breakpoints -----------------------------------------------------
     def add_breakpoint(self, address: int) -> None:
@@ -126,6 +126,12 @@ class DebugSession:
         Writes that touch flash schedule a reset before the next execution.
         """
         with self._lock:
+            flash = self.board.address_space.flash
+            if flash.contains(address) and flash.contains(address + len(data) - 1):
+                # Flash is read-only on the CPU bus; debuggers program it directly.
+                flash.program(address, data)
+                self.needs_reset = True
+                return
             for offset, value in enumerate(data):
                 self.board.write(address + offset, 1, value)
             self._mark_reset_needed_if_flash_write(address, len(data))
@@ -137,6 +143,13 @@ class DebugSession:
             self.needs_reset = True
 
     # -- execution -------------------------------------------------------
+    def _reset_if_needed(self) -> StopReason | None:
+        try:
+            self._ensure_runtime_reset()
+        except (SimulatorError, ValueError, RuntimeError) as exc:
+            return StopReason(reason="fault", address=None, detail=str(exc))
+        return None
+
     def _step_once(self) -> StopReason | None:
         """Execute one instruction; return a ``fault`` stop on failure."""
         pc = self.pc()
@@ -150,8 +163,7 @@ class DebugSession:
         """Execute exactly one instruction."""
         self.clear_halt()
         with self._lock:
-            self._ensure_runtime_reset()
-            fault = self._step_once()
+            fault = self._reset_if_needed() or self._step_once()
             if fault:
                 return fault
             return StopReason(reason="step", address=self.pc())
@@ -167,7 +179,9 @@ class DebugSession:
         while True:
             with self._lock:
                 if steps == 0:
-                    self._ensure_runtime_reset()
+                    fault = self._reset_if_needed()
+                    if fault:
+                        return fault
                 else:
                     pc = self.pc()
                     if pc in self.breakpoints:
