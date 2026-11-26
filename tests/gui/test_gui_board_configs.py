@@ -102,3 +102,12 @@ def test_stm32f4_discovery_leds_are_on_gpiod_pins_12_to_15():
         "led_ld5": (0x40020C14, 1 << 14),
         "led_ld6": (0x40020C14, 1 << 15),
     }
+
+
+def test_stm32f4_leds_form_the_diamond_around_the_accelerometer():
+    # On the photo: LD3 top, LD4 left, LD5 right, LD6 bottom (LD4/LD5 level, LD3/LD6 aligned).
+    cfg = load_gui_config(BOARDS_DIR / "stm32f4.yaml")
+    pos = {c.id: c.position for c in cfg.components}
+    ld3, ld4, ld5, ld6 = (pos[f"led_ld{n}"] for n in (3, 4, 5, 6))
+    assert ld3.y < ld4.y == ld5.y < ld6.y  # nosec B101
+    assert ld4.x < ld3.x == ld6.x < ld5.x  # nosec B101
