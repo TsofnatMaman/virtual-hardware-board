@@ -40,8 +40,8 @@ def test_flash_memory_load_read_and_bounds():
 
 def test_flash_memory_read_block_bounds():
     flash = FlashMemory(AddressRange(0x08000000, 8))
-    flash.load_image(b"\xAA\xBB\xCC\xDD\x00\x00\x00\x00")
-    assert flash.read_block(0x08000000, 4) == b"\xAA\xBB\xCC\xDD"
+    flash.load_image(b"\xaa\xbb\xcc\xdd\x00\x00\x00\x00")
+    assert flash.read_block(0x08000000, 4) == b"\xaa\xbb\xcc\xdd"
 
     with pytest.raises(MemoryBoundsError):
         flash.read_block(0x08000006, 4)

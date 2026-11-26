@@ -6,7 +6,7 @@ encodes which bits are accessible. This is hardware bit-banding.
 The GPIO data register (DATA) occupies a window of addresses where:
   - Address difference from base determines which bits are masked
   - mask = 1 << ((offset >> 2) & 0x7)  for an 8-bit GPIO port
-  
+
 For example, reading/writing address (base + 0x004) accesses only bit 0 of DATA.
 Reading/writing address (base + 0x008) accesses only bit 1 of DATA.
 And so on, up to bits 0-7.

@@ -64,7 +64,7 @@ def test_sram_read_write_and_read_block():
     addr_space = _make_address_space()
     addr_space.write(0x20000000, 4, 0xDEADBEEF)
     assert addr_space.read(0x20000000, 4) == 0xDEADBEEF
-    assert addr_space.read_block(0x20000000, 4) == b"\xEF\xBE\xAD\xDE"
+    assert addr_space.read_block(0x20000000, 4) == b"\xef\xbe\xad\xde"
 
 
 def test_read_block_invalid_region_raises():

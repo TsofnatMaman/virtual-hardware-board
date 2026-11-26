@@ -55,7 +55,9 @@ def test_read_watchpoint_ignores_writes_and_removal_stops_hook(session):
     assert first.reason == "watchpoint"  # nosec B101
     assert first.watch_kind == "read"  # nosec B101
     assert session.remove_watchpoint(GPIOF_DATA, 4, "read")  # nosec B101
-    assert session.board.cpu._watch_hook is None  # pylint: disable=protected-access  # nosec B101
+    assert (
+        session.board.cpu._watch_hook is None
+    )  # pylint: disable=protected-access  # nosec B101
     assert session.run(max_steps=2000).reason == "limit"  # nosec B101
     assert not session.remove_watchpoint(GPIOF_DATA, 4, "read")  # nosec B101
 
@@ -74,12 +76,14 @@ def test_watchpoint_json_commands(session):
 
 
 def test_invalid_watchpoint_rejected(session):
-    assert not session.handle_request(
-        {"cmd": "set_wp", "address": 0, "size": 0}
-    )["ok"]  # nosec B101
+    assert not session.handle_request({"cmd": "set_wp", "address": 0, "size": 0})[
+        "ok"
+    ]  # nosec B101
     assert not session.handle_request(
         {"cmd": "set_wp", "address": 0, "size": 4, "access": "bogus"}
-    )["ok"]  # nosec B101
+    )[
+        "ok"
+    ]  # nosec B101
 
 
 def _free_port() -> int:
@@ -131,7 +135,9 @@ def test_ctrl_c_interrupts_continue_and_watch_packets_work():
                 assert time.monotonic() < deadline  # nosec B101
                 time.sleep(0.05)
 
-        assert client.request(f"M0,{len(firmware):x}:{firmware.hex()}") == "OK"  # nosec B101
+        assert (
+            client.request(f"M0,{len(firmware):x}:{firmware.hex()}") == "OK"
+        )  # nosec B101
         assert client.request("qRcmd," + b"reset".hex()) == "OK"  # nosec B101
 
         # Watchpoint packets: set, hit, clear.
@@ -162,6 +168,8 @@ def test_debugger_reads_and_writes_stm32_peripheral_registers_by_bytes():
     session.write_memory(odr, (0x2000).to_bytes(4, "little"))
     assert board.read(odr, 4) == 0x2000  # nosec B101
     assert session.read_memory(odr, 4) == (0x2000).to_bytes(4, "little")  # nosec B101
-    assert session.read_memory(odr + 1, 1) == b"\x20"  # nosec B101  (single byte inside the word)
+    assert (
+        session.read_memory(odr + 1, 1) == b"\x20"
+    )  # nosec B101  (single byte inside the word)
     session.write_memory(odr + 1, b"\x40")  # partial word: read-modify-write
     assert board.read(odr, 4) == 0x4000  # nosec B101

@@ -11,7 +11,7 @@ New Architecture:
 
 Getting started:
     from simulator import create_board
-    
+
     board = create_board("stm32f4")
     board.cpu.reset()
     board.cpu.step()

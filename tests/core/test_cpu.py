@@ -124,8 +124,8 @@ def test_unicorn_engine_map_memory_aligns(monkeypatch):
     assert base == 0x1000
     assert size == 8192
 
-    eng.write_memory(0x2000, b"\xAA\xBB")
-    assert eng.uc.mem_writes[-1] == (0x2000, b"\xAA\xBB")
+    eng.write_memory(0x2000, b"\xaa\xbb")
+    assert eng.uc.mem_writes[-1] == (0x2000, b"\xaa\xbb")
 
     eng.uc.mem_reads[(0x3000, 2)] = b"\x11\x22"
     assert eng.read_memory(0x3000, 2) == b"\x11\x22"

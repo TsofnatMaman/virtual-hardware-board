@@ -18,7 +18,7 @@ BOARD-SPECIFIC CONTEXT:
 To understand how CPU addresses map to these registers, see:
   board = create_board("stm32f4")
   print(board.memory_access_model.description)
-  
+
 This shows that STM32F4 uses STM32F4DirectAccessModel, which maps
 addresses directly to registers by offset.
 

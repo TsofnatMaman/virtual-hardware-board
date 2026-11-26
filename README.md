@@ -222,6 +222,29 @@ To write and debug C code for the new board in VS Code, also add it to the C sid
 Start the simulator with `--board <myboard>` and keep `--gdb-port` equal to the
 `gdbTarget` port in `launch.json`.
 
+## Tests
+
+```bash
+pip install -r requirements-dev.txt -r requirements-gui.txt
+pytest                      # everything (~45 s)
+pytest -m "not integration" # fast unit tests only
+```
+
+| Area | Where | Needs |
+|---|---|---|
+| CPU, memory, GPIO, boards, config | `tests/core`, `tests/tm4c123`, `tests/stm32*`, `tests/utils` | `unicorn` |
+| GDB server, debug session, watchpoints, Ctrl+C, JSON server | `tests/debug` | `unicorn` |
+| CMSIS-DAP (Keil) emulator driven like Keil, on a real board | `tests/tools` | `unicorn` |
+| GUI: board layouts (`simulator_gui/boards/*.yaml`), components, window, `run_gui` | `tests/gui` | `PySide6` (runs headless via Qt `offscreen`) |
+| Firmware builds for every board and runs on the simulator; real `gdb` sessions; VS Code/template consistency | `tests/integration` | `arm-none-eabi-gcc`, `make`, `gdb-multiarch` |
+
+Tests that need an optional tool are skipped when it is missing. CI installs everything and sets
+`REQUIRE_FULL_TEST_ENV=1`, which turns a missing tool into a failure instead of a skip.
+
+Adding a board? `tests/integration/test_vscode_and_board_consistency.py` fails until the
+template (board files, `Makefile`, `tasks.json`, `launch.json`), `firmware/` and the GUI layout
+all know about it.
+
 ## Quality checks
 
 Run all local checks (formatting, linting, typing, complexity, tests):

@@ -6,6 +6,7 @@ Can optionally launch the GUI for the same board instance.
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import socketserver
 import threading
@@ -71,11 +72,15 @@ def _parse_args() -> argparse.Namespace:
 
 
 def _run_with_gui(
-    board, board_key: str, session: DebugSession, lock: threading.RLock, args: argparse.Namespace
+    board,
+    board_key: str,
+    session: DebugSession,
+    lock: threading.RLock,
+    args: argparse.Namespace,
 ) -> int:
     try:
-        from simulator_gui.app import run_gui
-    except Exception as exc:  # pragma: no cover - optional GUI dependency
+        run_gui = importlib.import_module("simulator_gui.app").run_gui
+    except ImportError as exc:  # the GUI (PySide6) is an optional dependency
         print(f"GUI unavailable: {exc}")
         server = DebugServer(args.host, args.port, session)
         print(f"Debug server listening on {args.host}:{args.port} (board={board_key})")

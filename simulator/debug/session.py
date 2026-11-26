@@ -112,9 +112,10 @@ class DebugSession:
         if not self.supports_watchpoints:
             raise NotImplementedError("CPU model does not support watchpoints")
         key = (address, size, kind)
+        cpu: Any = self.board.cpu  # watchpoints are an optional CPU capability
         with self._lock:
             if key not in self._watch_ids:
-                watch_id = self.board.cpu.add_watchpoint(address, size, kind)
+                watch_id = cpu.add_watchpoint(address, size, kind)
                 self._watch_ids[key] = watch_id
                 self._watch_kinds[watch_id] = kind
             return self._watch_ids[key]
@@ -125,7 +126,8 @@ class DebugSession:
             if watch_id is None:
                 return False
             self._watch_kinds.pop(watch_id, None)
-            return self.board.cpu.remove_watchpoint(watch_id)
+            cpu: Any = self.board.cpu
+            return bool(cpu.remove_watchpoint(watch_id))
 
     def _watch_stop(self) -> StopReason | None:
         """Return a watchpoint stop if the last instruction triggered one."""
@@ -207,7 +209,9 @@ class DebugSession:
             image = bytearray(self._read_mmio(start, end - start))
             image[address - start : address - start + len(data)] = data
         for offset in range(0, len(image), 4):
-            self.board.write(start + offset, 4, int.from_bytes(image[offset : offset + 4], "little"))
+            self.board.write(
+                start + offset, 4, int.from_bytes(image[offset : offset + 4], "little")
+            )
 
     def read_memory(self, address: int, size: int) -> bytes:
         """Read ``size`` bytes; raises ``SimulatorError``/``ValueError``.

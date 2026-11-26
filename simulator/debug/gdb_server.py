@@ -183,17 +183,17 @@ class GdbRemoteServer:
     def _handle_query(self, payload: str) -> str:
         if payload.startswith("qRcmd,"):
             return self._handle_monitor(payload)
-        if payload.startswith("qSupported"):
-            return "PacketSize=4000;swbreak+;hwbreak-"
         if payload in {"qAttached", "qC"}:
             return "1"
-        if payload.startswith("qfThreadInfo"):
-            return "m1"
-        if payload.startswith("qsThreadInfo"):
-            return "l"
-        if payload.startswith("qTStatus"):
-            return ""
-        return ""
+        replies = (
+            ("qSupported", "PacketSize=4000;swbreak+;hwbreak-"),
+            ("qfThreadInfo", "m1"),
+            ("qsThreadInfo", "l"),
+        )
+        for prefix, reply in replies:
+            if payload.startswith(prefix):
+                return reply
+        return ""  # qTStatus and everything else: unsupported
 
     @staticmethod
     def _decode_x_payload(raw: str) -> bytes:
@@ -250,7 +250,7 @@ class GdbRemoteServer:
             data = conn.recv(1)
         except OSError:
             return True
-        return data == _CTRL_C or data == b""
+        return data in (_CTRL_C, b"")
 
     def _resume(self) -> str:
         """Continue execution, stopping early on Ctrl+C from the client."""

@@ -11,19 +11,19 @@ This allows atomic single-bit or multi-bit operations without RMW cycles.
 
 Register Layout:
   DATA @ 0x3FC (8-bit I/O register)
-  DIR @ 0x400 (pin direction: 1=output, 0=input)  
+  DIR @ 0x400 (pin direction: 1=output, 0=input)
   DEN @ 0x51C (digital enable)
   AFSEL @ 0x420 (alternate function select)
-  
+
 Interrupt Registers:
   RIS @ 0x414 (raw interrupt status)
   MIS @ 0x418 (masked interrupt status, read-only)
   ICR @ 0x41C (interrupt clear, write-only)
   IS, IBE, IEV, IM control interrupt behavior
-  
+
 MASKED DATA WINDOW:
   The DATA register is accessed through a 1024-byte window (0x00-0x3FC):
-  
+
   - Address DATA+0x000: Full I/O register access (all 8 bits)
   - Address DATA+0x004: Select only bit 0 (mask = 0x01)
   - Address DATA+0x008: Select only bit 1 (mask = 0x02)
@@ -31,16 +31,16 @@ MASKED DATA WINDOW:
   - ...
   - Address DATA+0x3E0: Select only bit 7 (mask = 0x80)
   - Address DATA+0x3FC: Full I/O register access (all 8 bits, same as +0x000)
-  
+
 Example:
   Reading address (base + 0x008) returns 0 or 1 (only bit 1 visible)
   Writing 0xFF to address (base + 0x008) sets only bit 1 (others unchanged)
-  
+
 BOARD-SPECIFIC CONTEXT:
 To understand how CPU addresses map to these registers, see:
   board = create_board("tm4c123")
   print(board.memory_access_model.description)
-  
+
 This shows that TM4C123 uses TM4C123BitBandedAccessModel, which decodes
 addresses to extract bit masks from the address itself.
 

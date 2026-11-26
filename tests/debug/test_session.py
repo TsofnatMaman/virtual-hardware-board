@@ -85,5 +85,7 @@ def test_reset_on_unbootable_board_is_deferred_not_fatal():
     session = DebugSession(BlankFlashBoard())
     assert session.reset() is False  # nosec B101
     assert session.needs_reset  # nosec B101
-    assert session.handle_request({"cmd": "reset"})["result"]["status"] == "deferred"  # nosec B101
+    assert (
+        session.handle_request({"cmd": "reset"})["result"]["status"] == "deferred"
+    )  # nosec B101
     assert session.step().reason == "fault"  # nosec B101

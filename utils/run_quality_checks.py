@@ -220,6 +220,7 @@ class CheckRunner:
                 [
                     "pytest",
                     "--cov=simulator",
+                    "--cov=simulator_gui",
                     "--cov-report=term-missing",
                     "--cov-report=xml",
                     "simulator",
@@ -232,6 +233,7 @@ class CheckRunner:
                 [
                     "pytest",
                     "--cov=simulator",
+                    "--cov=simulator_gui",
                     "--cov-report=term-missing",
                     "--cov-report=xml",
                     "simulator",
