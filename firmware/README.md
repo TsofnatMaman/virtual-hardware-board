@@ -18,6 +18,8 @@ Simple example firmware that demonstrates GPIO control on the TM4C123.
 - `boards/tm4c123/tm4c.h` - TM4C register definitions
 - `boards/stm32c031/linker.ld` - STM32C031 linker script
 - `boards/stm32c031/stm32c031.h` - STM32C031 register definitions
+- `boards/stm32f4/linker.ld`, `boards/stm32f4/stm32f4.h` - STM32F4 Discovery linker script and registers
+- `led_blink/stm32f4/main.c` - STM32F4 Discovery running light on LD3-LD6
 - `Makefile` - Unified build system
 
 ## Building
@@ -45,6 +47,7 @@ Linux/macOS:
 ```bash
 make -f firmware/Makefile BOARD=tm4c123 MAIN=firmware/led_blink/tm4c/main.c
 make -f firmware/Makefile BOARD=stm32c031 MAIN=firmware/led_blink/stm32/main.c
+make -f firmware/Makefile BOARD=stm32f4 MAIN=firmware/led_blink/stm32f4/main.c
 ```
 
 Windows (PowerShell + MinGW):

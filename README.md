@@ -203,7 +203,11 @@ tests/
    ```
 
 5. Add board-level tests under `tests/<myboard>/`.
-6. (Optional) add GUI config in `simulator_gui/boards/<myboard>.yaml`.
+6. (Optional) add GUI config in `simulator_gui/boards/<myboard>.yaml`. A
+   `background_image` gives the board a picture, and each component's `position`
+   places an LED/switch on it. See `simulator_gui/boards/stm32f4.yaml` and
+   `tools/board_images/stm32f4_discovery.py`, which draws that board's picture
+   (a stylised illustration; replace the PNG with your own image and adjust the positions).
 
 To write and debug C code for the new board in VS Code, also add it to the C side:
 

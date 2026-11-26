@@ -36,6 +36,24 @@
         "interpreter-exec console \"monitor reset\""
       ],
       "preLaunchTask": "build (stm32c031)"
+    },
+    {
+      "name": "Debug on simulator (STM32F4 Discovery)",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "external",
+      "gdbTarget": "127.0.0.1:3333",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/app.elf",
+      "runToEntryPoint": "main",
+      "overrideLaunchCommands": [
+        "-target-download",
+        "interpreter-exec console \"monitor reset\""
+      ],
+      "overrideRestartCommands": [
+        "interpreter-exec console \"monitor reset\""
+      ],
+      "preLaunchTask": "build (stm32f4)"
     }
   ]
 }

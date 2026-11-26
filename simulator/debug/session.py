@@ -179,6 +179,36 @@ class DebugSession:
             return region
         return None
 
+    def _in_mmio(self, address: int, size: int) -> bool:
+        region = getattr(self.board.address_space, "mmio", None)
+        return bool(
+            region is not None
+            and region.contains(address)
+            and region.contains(address + max(size, 1) - 1)
+        )
+
+    def _read_mmio(self, address: int, size: int) -> bytes:
+        """Read peripheral registers as aligned 32-bit words.
+
+        Peripheral models (e.g. STM32 GPIO) only decode word accesses, so byte
+        reads would return zeros. A debugger reads bytes, so assemble them here.
+        """
+        start, end = address & ~3, (address + size + 3) & ~3
+        words = b"".join(
+            self.board.read(a, 4).to_bytes(4, "little") for a in range(start, end, 4)
+        )
+        return words[address - start : address - start + size]
+
+    def _write_mmio(self, address: int, data: bytes) -> None:
+        start, end = address & ~3, (address + len(data) + 3) & ~3
+        if address == start and len(data) % 4 == 0:
+            image = bytearray(data)
+        else:  # partial word: read-modify-write
+            image = bytearray(self._read_mmio(start, end - start))
+            image[address - start : address - start + len(data)] = data
+        for offset in range(0, len(image), 4):
+            self.board.write(start + offset, 4, int.from_bytes(image[offset : offset + 4], "little"))
+
     def read_memory(self, address: int, size: int) -> bytes:
         """Read ``size`` bytes; raises ``SimulatorError``/``ValueError``.
 
@@ -193,6 +223,8 @@ class DebugSession:
             engine = getattr(self.board.cpu, "engine", None)
             if engine is not None and self._region(address, size, "sram"):
                 return bytes(engine.read_memory(address, size))
+            if self._in_mmio(address, size):
+                return self._read_mmio(address, size)
             return bytes(self.board.read(address + i, 1) for i in range(size))
 
     def write_memory(self, address: int, data: bytes) -> None:
@@ -207,6 +239,9 @@ class DebugSession:
             if flash is not None and hasattr(flash, "program"):
                 flash.program(address, data)
                 self.needs_reset = True
+                return
+            if self._in_mmio(address, len(data)):
+                self._write_mmio(address, data)
                 return
             for offset, value in enumerate(data):
                 self.board.write(address + offset, 1, value)

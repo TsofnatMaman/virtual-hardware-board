@@ -1,5 +1,9 @@
+# STM32F4 Discovery (STM32F407): the four user LEDs are on GPIOD pins 12-15.
+# Positions are in canvas pixels (800x480) of assets/stm32f4_discovery.png; the
+# generator tools/board_images/stm32f4_discovery.py draws the LED sockets at the
+# same centres (24x24 LEDs are centred on them).
 board_name: STM32F4
-background_image: ../assets/board_placeholder.png
+background_image: ../assets/stm32f4_discovery.png
 
 canvas:
   width: 800
@@ -12,41 +16,54 @@ fallback_layout:
   item_size: [28, 28]
 
 components:
-  - id: led_red
+  - id: led_ld4
     type: LED
-    position: [610, 210, 24, 24]
-    visual:
-      on_color: "#ff3b30"
-      off_color: "#3a0f0f"
-      border_color: "#111111"
-    binding:
-      address: 0x40020014
-      mask: 0x01
-      size: 4
-      direction: output
-
-  - id: led_green
-    type: LED
-    position: [640, 210, 24, 24]
+    position: [548, 288, 24, 24]      # LD4, green, PD12
     visual:
       on_color: "#22c55e"
       off_color: "#0a2a16"
       border_color: "#111111"
     binding:
-      address: 0x40020014
-      mask: 0x02
+      address: 0x40020C14             # GPIOD ODR
+      mask: 0x1000
       size: 4
       direction: output
 
-  - id: led_blue
+  - id: led_ld3
     type: LED
-    position: [670, 210, 24, 24]
+    position: [598, 238, 24, 24]      # LD3, orange, PD13
+    visual:
+      on_color: "#ff8a00"
+      off_color: "#3a2000"
+      border_color: "#111111"
+    binding:
+      address: 0x40020C14
+      mask: 0x2000
+      size: 4
+      direction: output
+
+  - id: led_ld5
+    type: LED
+    position: [648, 288, 24, 24]      # LD5, red, PD14
+    visual:
+      on_color: "#ff3b30"
+      off_color: "#3a0f0f"
+      border_color: "#111111"
+    binding:
+      address: 0x40020C14
+      mask: 0x4000
+      size: 4
+      direction: output
+
+  - id: led_ld6
+    type: LED
+    position: [598, 338, 24, 24]      # LD6, blue, PD15
     visual:
       on_color: "#3b82f6"
       off_color: "#0b1a3a"
       border_color: "#111111"
     binding:
-      address: 0x40020014
-      mask: 0x04
+      address: 0x40020C14
+      mask: 0x8000
       size: 4
       direction: output

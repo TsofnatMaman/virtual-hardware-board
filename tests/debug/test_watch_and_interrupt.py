@@ -153,3 +153,15 @@ def test_ctrl_c_interrupts_continue_and_watch_packets_work():
     finally:
         stop.set()
         thread.join(timeout=3)
+
+
+def test_debugger_reads_and_writes_stm32_peripheral_registers_by_bytes():
+    board = create_board("stm32f4")
+    session = DebugSession(board)
+    odr = 0x40020C14  # GPIOD ODR: the model only decodes 32-bit accesses
+    session.write_memory(odr, (0x2000).to_bytes(4, "little"))
+    assert board.read(odr, 4) == 0x2000  # nosec B101
+    assert session.read_memory(odr, 4) == (0x2000).to_bytes(4, "little")  # nosec B101
+    assert session.read_memory(odr + 1, 1) == b"\x20"  # nosec B101  (single byte inside the word)
+    session.write_memory(odr + 1, b"\x40")  # partial word: read-modify-write
+    assert board.read(odr, 4) == 0x4000  # nosec B101

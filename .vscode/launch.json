@@ -42,6 +42,26 @@
       "postDebugTask": "sim: stop"
     },
     {
+      "name": "Debug STM32F4 Discovery on simulator (GUI)",
+      "type": "cortex-debug",
+      "request": "launch",
+      "servertype": "external",
+      "gdbTarget": "127.0.0.1:3333",
+      "cwd": "${workspaceFolder}",
+      "executable": "${workspaceFolder}/build/stm32f4.elf",
+      "device": "STM32F407VG",
+      "runToEntryPoint": "main",
+      "overrideLaunchCommands": [
+        "-target-download",
+        "interpreter-exec console \"monitor reset\""
+      ],
+      "overrideRestartCommands": [
+        "interpreter-exec console \"monitor reset\""
+      ],
+      "preLaunchTask": "sim: build + start (stm32f4)",
+      "postDebugTask": "sim: stop"
+    },
+    {
       "name": "Debug TM4C123 on simulator (headless)",
       "type": "cortex-debug",
       "request": "launch",

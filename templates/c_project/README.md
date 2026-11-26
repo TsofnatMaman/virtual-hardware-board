@@ -27,6 +27,16 @@ debug probe plus board.
    LEDs in window 1.
 4. Stop and press F5 again as often as you like; the simulator keeps running.
 
+## Boards
+
+| Simulator `--board` | Chip | Notes |
+|---|---|---|
+| `tm4c123` | TM4C123 (Cortex-M4) LaunchPad | RGB LED on GPIOF |
+| `stm32c031` | STM32C031 (Cortex-M0+) Nucleo | LD4 on PA5 |
+| `stm32f4` | STM32F407 (Cortex-M4) Discovery | LD3-LD6 on PD12-PD15; header `stm32f4.h` |
+
+Pick the debug configuration whose name matches the board the simulator runs.
+
 ## How VS Code finds the simulator (port 3333)
 
 VS Code does not discover the simulator. The address is written in **two places**
@@ -108,4 +118,4 @@ The same checklist applies to the repo's own `.vscode/launch.json` and
 ## Layout
 - `src/*.c` - your code (all files are compiled).
 - `board/` - startup code, linker scripts and register headers per board.
-- `make BOARD=tm4c123|stm32c031` - build from a terminal.
+- `make BOARD=tm4c123|stm32c031|stm32f4` - build from a terminal.

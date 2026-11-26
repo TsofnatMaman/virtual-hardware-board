@@ -29,7 +29,7 @@ MAIN ?=
 OUT ?=
 
 ifeq ($(strip $(BOARD)),)
-$(error BOARD is required. Example: BOARD=tm4c123 or BOARD=stm32c031)
+$(error BOARD is required. Example: BOARD=tm4c123, BOARD=stm32c031 or BOARD=stm32f4)
 endif
 ifeq ($(strip $(MAIN)),)
 $(error MAIN is required. Example: MAIN=led_blink/tm4c/main.c)
@@ -41,8 +41,11 @@ BOARD_DIR := $(FIRMWARE_DIR)/boards/tm4c123
 else ifeq ($(BOARD),stm32c031)
 CPU := cortex-m0plus
 BOARD_DIR := $(FIRMWARE_DIR)/boards/stm32c031
+else ifeq ($(BOARD),stm32f4)
+CPU := cortex-m4
+BOARD_DIR := $(FIRMWARE_DIR)/boards/stm32f4
 else
-$(error Unknown BOARD '$(BOARD)'. Supported: tm4c123, stm32c031)
+$(error Unknown BOARD '$(BOARD)'. Supported: tm4c123, stm32c031, stm32f4)
 endif
 
 MAIN_ABS := $(abspath $(MAIN))
@@ -101,5 +104,6 @@ help:
 	@echo "Boards:"
 	@echo "  tm4c123"
 	@echo "  stm32c031"
+	@echo "  stm32f4"
 
 .PHONY: all clean help

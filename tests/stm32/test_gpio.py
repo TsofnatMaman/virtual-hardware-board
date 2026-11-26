@@ -26,6 +26,15 @@ def test_bsrr_sets_and_resets_bits(gpio_cfg_with_mask):
     assert gpio.get_port_state() == 0b00000001
 
 
+def test_bsrr_set_wins_when_set_and_reset_target_the_same_pin(gpio_cfg_with_mask):
+    gpio_cfg, data_mask = gpio_cfg_with_mask
+    gpio = STM32GPIO(gpio_cfg, data_mask=data_mask, initial_value=0b1111)
+    # Reference manual: if BSx and BRx are both set, BSx has priority.
+    # Reset pins 0-3 and set pin 1 in one write: only pin 1 stays high.
+    gpio.write(gpio_cfg.offsets.bsrr, 4, (0b1111 << 16) | 0b0010)
+    assert gpio.get_port_state() == 0b0010  # nosec B101
+
+
 def test_gpio_reset_and_data_mask_validation(gpio_cfg_with_mask):
     gpio_cfg, data_mask = gpio_cfg_with_mask
     initial = 0x00FF

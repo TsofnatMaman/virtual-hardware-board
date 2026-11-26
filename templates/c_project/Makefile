@@ -14,8 +14,10 @@ ifeq ($(BOARD),tm4c123)
 CPU := cortex-m3
 else ifeq ($(BOARD),stm32c031)
 CPU := cortex-m0plus
+else ifeq ($(BOARD),stm32f4)
+CPU := cortex-m4
 else
-$(error Unknown BOARD '$(BOARD)'. Use tm4c123 or stm32c031)
+$(error Unknown BOARD '$(BOARD)'. Use tm4c123, stm32c031 or stm32f4)
 endif
 
 SRCS    := board/startup.c $(wildcard src/*.c)

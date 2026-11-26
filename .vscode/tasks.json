@@ -20,6 +20,15 @@
       "group": "build"
     },
     {
+      "label": "firmware: build (stm32f4)",
+      "type": "shell",
+      "command": "make -f firmware/Makefile BOARD=stm32f4 MAIN=firmware/led_blink/stm32f4/main.c OUT=build/stm32f4.bin",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
+    },
+    {
       "label": "sim: start (tm4c123)",
       "type": "shell",
       "command": "python -u -m simulator_gui --board tm4c123 --gdb-port 3333",
@@ -83,6 +92,27 @@
       }
     },
     {
+      "label": "sim: start (stm32f4)",
+      "type": "shell",
+      "command": "python -u -m simulator_gui --board stm32f4 --gdb-port 3333",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "simulator",
+        "pattern": {
+          "regexp": "^SIMULATOR_NEVER_MATCHES$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^NEVER$",
+          "endsPattern": "^\\[gdb\\] listening on "
+        }
+      },
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
       "label": "sim: build + start (tm4c123)",
       "dependsOrder": "sequence",
       "dependsOn": [
@@ -106,6 +136,15 @@
       "dependsOn": [
         "firmware: build (tm4c123)",
         "sim: start (tm4c123, headless)"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "sim: build + start (stm32f4)",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "firmware: build (stm32f4)",
+        "sim: start (stm32f4)"
       ],
       "problemMatcher": []
     },

@@ -18,6 +18,15 @@
         "$gcc"
       ],
       "group": "build"
+    },
+    {
+      "label": "build (stm32f4)",
+      "type": "shell",
+      "command": "make BOARD=stm32f4",
+      "problemMatcher": [
+        "$gcc"
+      ],
+      "group": "build"
     }
   ]
 }

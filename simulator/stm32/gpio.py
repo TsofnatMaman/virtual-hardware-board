@@ -93,9 +93,11 @@ class STM32BitSetResetRegister(WriteOnlyRegister):
         set_mask = val & self._data_mask
         reset_mask = (val >> 16) & self._data_mask
 
+        # Reference manual: if both BSx and BRx are set for a pin, BSx (set) wins,
+        # so apply the resets first and the sets last.
         current = self.odr.read(4)
-        current |= set_mask
         current &= ~reset_mask
+        current |= set_mask
         self.odr.write(4, current & self._data_mask)
 
 
