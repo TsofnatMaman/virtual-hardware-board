@@ -7,7 +7,12 @@ import subprocess
 from fnmatch import fnmatch
 
 from quality.core import Finding, Tree
-from quality.limits import ALLOWED_BINARIES, FORBIDDEN_TRACKED, MAX_FILE_BYTES
+from quality.limits import (
+    ALLOWED_BINARIES,
+    ALLOWED_LARGE_FILES,
+    FORBIDDEN_TRACKED,
+    MAX_FILE_BYTES,
+)
 
 GITLINK_MODE = "160000"
 INDEX_ENTRY = re.compile(
@@ -50,7 +55,7 @@ def check(tree: Tree) -> list[Finding]:
                 Finding(path, 1, "binary not in ALLOWED_BINARIES (quality/limits.py)")
             )
         size = (tree.root / path).stat().st_size
-        if size > MAX_FILE_BYTES:
+        if size > MAX_FILE_BYTES and path not in ALLOWED_LARGE_FILES:
             findings.append(
                 Finding(
                     path, 1, f"{size} bytes exceeds MAX_FILE_BYTES ({MAX_FILE_BYTES})"

@@ -27,6 +27,9 @@ ALLOWED_BINARIES = {  # tracked *.bin: path -> why
     "firmware/led_blink/tm4c/firmware.bin": "prebuilt example used by the quick start",
     "firmware/led_blink/stm32/firmware.bin": "prebuilt example used by the quick start",
 }
+ALLOWED_LARGE_FILES = {  # tracked files over MAX_FILE_BYTES: path -> why
+    "docs/tutorial.mp4": "narrated video tutorial linked from the README",
+}
 
 # Documentation: only paths under these roots are checked when written as `code`.
 DOC_SUFFIXES = (".md",)

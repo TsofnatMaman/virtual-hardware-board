@@ -4,6 +4,15 @@ A Python-based virtual hardware platform for simulating Cortex-M boards, loading
 firmware binaries, and observing peripheral behavior through CLI examples and a
 GUI.
 
+## Video tutorial
+
+[`docs/tutorial.mp4`](docs/tutorial.mp4) (about 8 minutes, narrated in English) goes from a
+fresh computer to debugging C code in VS Code on a virtual board:
+
+1. installing the simulator,
+2. creating a C project from the template and debugging it on the TM4C123,
+3. the same workflow on the STM32F4 Discovery.
+
 ## Quick start
 
 ### 1) Install dependencies
