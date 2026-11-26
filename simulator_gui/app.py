@@ -58,8 +58,8 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--gdb-max-continue-steps",
         type=int,
-        default=250_000,
-        help="Instruction budget per GDB continue command",
+        default=0,
+        help="Instruction budget per GDB continue (0 = unlimited, Ctrl+C stops)",
     )
     return parser.parse_args(argv)
 

@@ -32,9 +32,11 @@ _CORE_REGISTER_COUNT = 16
 class StopReason:
     """Why execution stopped."""
 
-    reason: str  # "step" | "breakpoint" | "halt" | "limit" | "fault"
+    reason: str  # "step" | "breakpoint" | "watchpoint" | "halt" | "limit" | "fault"
     address: int | None = None
     detail: str | None = None
+    watch_id: int | None = None
+    watch_kind: str | None = None  # "read" | "write" | "access" (watched kind)
 
 
 def _bytes_to_hex(data: bytes) -> str:
@@ -56,6 +58,8 @@ class DebugSession:
     def __init__(self, board: Board, lock: threading.RLock | None = None):
         self.board = board
         self.breakpoints: set[int] = set()
+        self._watch_ids: dict[tuple[int, int, str], int] = {}
+        self._watch_kinds: dict[int, str] = {}
         self.needs_reset = False
         self._halt = threading.Event()
         self._lock = lock or threading.RLock()
@@ -84,6 +88,47 @@ class DebugSession:
 
     def remove_breakpoint(self, address: int) -> None:
         self.breakpoints.discard(address & _ADDRESS_MASK)
+
+    # -- watchpoints -----------------------------------------------------
+    @property
+    def supports_watchpoints(self) -> bool:
+        return hasattr(self.board.cpu, "add_watchpoint")
+
+    def add_watchpoint(self, address: int, size: int, kind: str) -> int:
+        """Watch memory; ``kind`` is ``read``, ``write`` or ``access``.
+
+        Raises ``NotImplementedError`` if the CPU model has no watchpoints.
+        """
+        if not self.supports_watchpoints:
+            raise NotImplementedError("CPU model does not support watchpoints")
+        key = (address, size, kind)
+        with self._lock:
+            if key not in self._watch_ids:
+                watch_id = self.board.cpu.add_watchpoint(address, size, kind)
+                self._watch_ids[key] = watch_id
+                self._watch_kinds[watch_id] = kind
+            return self._watch_ids[key]
+
+    def remove_watchpoint(self, address: int, size: int, kind: str) -> bool:
+        with self._lock:
+            watch_id = self._watch_ids.pop((address, size, kind), None)
+            if watch_id is None:
+                return False
+            self._watch_kinds.pop(watch_id, None)
+            return self.board.cpu.remove_watchpoint(watch_id)
+
+    def _watch_stop(self) -> StopReason | None:
+        """Return a watchpoint stop if the last instruction triggered one."""
+        consume = getattr(self.board.cpu, "consume_watch_hit", None)
+        hit = consume() if consume else None
+        if hit is None:
+            return None
+        return StopReason(
+            reason="watchpoint",
+            address=hit.address,
+            watch_id=hit.watch_id,
+            watch_kind=self._watch_kinds.get(hit.watch_id, hit.kind),
+        )
 
     # -- registers -------------------------------------------------------
     def read_register(self, index: int) -> int:
@@ -115,25 +160,49 @@ class DebugSession:
         return values
 
     # -- memory ----------------------------------------------------------
+    def _region(self, address: int, size: int, name: str):
+        """Return the flash/sram region fully containing the range, else None."""
+        region = getattr(self.board.address_space, name, None)
+        if region is None:
+            return None
+        if region.contains(address) and region.contains(address + max(size, 1) - 1):
+            return region
+        return None
+
     def read_memory(self, address: int, size: int) -> bytes:
-        """Read ``size`` bytes; raises ``SimulatorError``/``ValueError``."""
+        """Read ``size`` bytes; raises ``SimulatorError``/``ValueError``.
+
+        SRAM lives in the CPU engine while the program runs (the AddressSpace
+        copy is not updated by CPU stores), so it is read from there. Flash is
+        read from its backing store, MMIO goes through the bus.
+        """
         with self._lock:
+            flash = self._region(address, size, "flash")
+            if flash is not None and hasattr(flash, "read_block"):
+                return bytes(flash.read_block(address, size))
+            engine = getattr(self.board.cpu, "engine", None)
+            if engine is not None and self._region(address, size, "sram"):
+                return bytes(engine.read_memory(address, size))
             return bytes(self.board.read(address + i, 1) for i in range(size))
 
     def write_memory(self, address: int, data: bytes) -> None:
         """Write bytes; raises ``SimulatorError``/``ValueError``.
 
-        Writes that touch flash schedule a reset before the next execution.
+        Flash is programmed directly (read-only on the CPU bus) and schedules
+        a reset before the next execution. SRAM is updated in both the
+        AddressSpace and the CPU engine.
         """
         with self._lock:
-            flash = self.board.address_space.flash
-            if flash.contains(address) and flash.contains(address + len(data) - 1):
-                # Flash is read-only on the CPU bus; debuggers program it directly.
+            flash = self._region(address, len(data), "flash")
+            if flash is not None and hasattr(flash, "program"):
                 flash.program(address, data)
                 self.needs_reset = True
                 return
             for offset, value in enumerate(data):
                 self.board.write(address + offset, 1, value)
+            engine = getattr(self.board.cpu, "engine", None)
+            if engine is not None and self._region(address, len(data), "sram"):
+                engine.write_memory(address, data)
             self._mark_reset_needed_if_flash_write(address, len(data))
 
     def _mark_reset_needed_if_flash_write(self, address: int, length: int) -> None:
@@ -153,6 +222,9 @@ class DebugSession:
     def _step_once(self) -> StopReason | None:
         """Execute one instruction; return a ``fault`` stop on failure."""
         pc = self.pc()
+        clear = getattr(self.board.cpu, "clear_watch_hit", None)
+        if clear:
+            clear()
         try:
             self.board.step(1)
         except (SimulatorError, ValueError) as exc:
@@ -166,7 +238,7 @@ class DebugSession:
             fault = self._reset_if_needed() or self._step_once()
             if fault:
                 return fault
-            return StopReason(reason="step", address=self.pc())
+            return self._watch_stop() or StopReason(reason="step", address=self.pc())
 
     def run(self, max_steps: int | None = None) -> StopReason:
         """Run until a breakpoint, halt request, fault or ``max_steps``.
@@ -189,6 +261,9 @@ class DebugSession:
                 fault = self._step_once()
                 if fault:
                     return fault
+                watch = self._watch_stop()
+                if watch:
+                    return watch
                 steps += 1
                 if max_steps is not None and steps >= max_steps:
                     pc = self.pc()
@@ -214,13 +289,21 @@ class DebugSession:
             "halt": self._cmd_halt,
             "set_bp": self._cmd_set_bp,
             "clear_bp": self._cmd_clear_bp,
+            "set_wp": self._cmd_set_wp,
+            "clear_wp": self._cmd_clear_wp,
         }
         try:
             handler = handlers.get(cmd) if isinstance(cmd, str) else None
             if handler is None:
                 raise ValueError(f"Unknown command '{cmd}'")
             return {"id": req_id, "ok": True, "result": handler(request)}
-        except (SimulatorError, ValueError, KeyError, TypeError) as exc:
+        except (
+            SimulatorError,
+            ValueError,
+            KeyError,
+            TypeError,
+            NotImplementedError,
+        ) as exc:
             return {"id": req_id, "ok": False, "error": str(exc)}
 
     def _cmd_hello(self, _request: dict[str, Any]) -> dict[str, Any]:
@@ -264,3 +347,19 @@ class DebugSession:
     def _cmd_clear_bp(self, request: dict[str, Any]) -> dict[str, Any]:
         self.remove_breakpoint(int(request["address"]))
         return {"status": "ok"}
+
+    def _cmd_set_wp(self, request: dict[str, Any]) -> dict[str, Any]:
+        watch_id = self.add_watchpoint(
+            int(request["address"]),
+            int(request["size"]),
+            request.get("access", "access"),
+        )
+        return {"watch_id": watch_id}
+
+    def _cmd_clear_wp(self, request: dict[str, Any]) -> dict[str, Any]:
+        removed = self.remove_watchpoint(
+            int(request["address"]),
+            int(request["size"]),
+            request.get("access", "access"),
+        )
+        return {"removed": removed}

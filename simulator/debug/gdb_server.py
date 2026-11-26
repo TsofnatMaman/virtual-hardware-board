@@ -7,6 +7,7 @@ from VS Code (or plain gdb) against a running simulator board.
 from __future__ import annotations
 
 import argparse
+import select
 import socket
 import threading
 from dataclasses import dataclass, field
@@ -14,11 +15,25 @@ from pathlib import Path
 
 from simulator import create_board
 from simulator.core.exceptions import SimulatorError
-from simulator.debug.session import DebugSession
+from simulator.debug.session import DebugSession, StopReason
 from simulator.interfaces.board import Board
 
 _SIGNAL_TRAP = "S05"
 _STOP_REPLY = "T05thread:1;"
+_STOP_INTERRUPT = "T02thread:1;"  # SIGINT, reply to Ctrl+C
+_WATCH_PREFIX = {"write": "watch", "read": "rwatch", "access": "awatch"}
+_WATCH_PACKET_KIND = {"2": "write", "3": "read", "4": "access"}
+_CTRL_C = b"\x03"
+
+
+def stop_reply(stop: StopReason) -> str:
+    """Translate a session stop into a GDB stop-reply packet."""
+    if stop.reason == "halt":
+        return _STOP_INTERRUPT
+    if stop.reason == "watchpoint" and stop.address is not None:
+        prefix = _WATCH_PREFIX.get(stop.watch_kind or "", "watch")
+        return f"T05{prefix}:{stop.address:x};thread:1;"
+    return _STOP_REPLY
 
 
 @dataclass
@@ -26,7 +41,7 @@ class GdbTarget:
     """GDB-facing adapter over the shared :class:`DebugSession`."""
 
     board: Board
-    max_continue_steps: int = 250_000
+    max_continue_steps: int = 0  # 0 = unlimited (Ctrl+C halts)
     lock: threading.RLock | None = None
     session: DebugSession = field(init=False)
 
@@ -74,12 +89,26 @@ class GdbTarget:
         self.session.set_pc(address)
 
     def step(self) -> str:
-        self.session.step()
-        return _SIGNAL_TRAP
+        stop = self.session.step()
+        return stop_reply(stop) if stop.reason == "watchpoint" else _SIGNAL_TRAP
 
     def cont(self) -> str:
-        self.session.run(max_steps=self.max_continue_steps)
-        return _STOP_REPLY
+        max_steps = self.max_continue_steps if self.max_continue_steps > 0 else None
+        return stop_reply(self.session.run(max_steps=max_steps))
+
+    def halt(self) -> None:
+        """Interrupt a running :meth:`cont` (thread-safe)."""
+        self.session.request_halt()
+
+    def set_watchpoint(self, kind: str, address: int, size: int) -> bool:
+        try:
+            self.session.add_watchpoint(address, size, kind)
+        except (NotImplementedError, ValueError):
+            return False
+        return True
+
+    def clear_watchpoint(self, kind: str, address: int, size: int) -> bool:
+        return self.session.remove_watchpoint(address, size, kind)
 
 
 class GdbRemoteServer:
@@ -89,6 +118,7 @@ class GdbRemoteServer:
         self.target = target
         self.host = host
         self.port = port
+        self._conn: socket.socket | None = None
 
     @staticmethod
     def _checksum(payload: str) -> str:
@@ -211,11 +241,43 @@ class GdbRemoteServer:
 
         return None
 
+    def _interrupt_requested(self, conn: socket.socket) -> bool:
+        """True if the client sent Ctrl+C (0x03) or closed the connection."""
+        ready, _, _ = select.select([conn], [], [], 0)
+        if not ready:
+            return False
+        try:
+            data = conn.recv(1)
+        except OSError:
+            return True
+        return data == _CTRL_C or data == b""
+
+    def _resume(self) -> str:
+        """Continue execution, stopping early on Ctrl+C from the client."""
+        conn = self._conn
+        if conn is None:
+            return self.target.cont()
+
+        result: list[str] = []
+        worker = threading.Thread(
+            target=lambda: result.append(self.target.cont()),
+            daemon=True,
+            name="sim-gdb-run",
+        )
+        worker.start()
+        while worker.is_alive():
+            if self._interrupt_requested(conn):
+                self.target.halt()
+                break
+            worker.join(0.01)
+        worker.join()
+        return result[0]
+
     def _handle_exec_ops(self, payload: str) -> str | None:
         if payload.startswith("c"):
             if len(payload) > 1:
                 self.target.set_pc(int(payload[1:], 16))
-            return self.target.cont()
+            return self._resume()
 
         if payload.startswith("s"):
             if len(payload) > 1:
@@ -226,6 +288,21 @@ class GdbRemoteServer:
             return _SIGNAL_TRAP
 
         return None
+
+    def _handle_watchpoint_ops(self, payload: str) -> str | None:
+        """Handle ``Z2/Z3/Z4`` (write/read/access watch) and ``z2/z3/z4``."""
+        if len(payload) < 2 or payload[0] not in "Zz" or payload[1] not in "234":
+            return None
+        kind = _WATCH_PACKET_KIND[payload[1]]
+        parts = payload.split(",")
+        try:
+            address, size = int(parts[1], 16), int(parts[2], 16)
+        except (IndexError, ValueError):
+            return "E01"
+        if payload[0] == "Z":
+            return "OK" if self.target.set_watchpoint(kind, address, size) else ""
+        self.target.clear_watchpoint(kind, address, size)
+        return "OK"
 
     def _handle_breakpoint_ops(self, payload: str) -> str | None:
         if payload.startswith("Z0,"):
@@ -246,7 +323,7 @@ class GdbRemoteServer:
         if payload.startswith("vCont;"):
             if ";s" in payload:
                 return self.target.step()
-            return self.target.cont()
+            return self._resume()
         return None
 
     def _handle_packet(self, payload: str) -> str:
@@ -258,6 +335,7 @@ class GdbRemoteServer:
             self._handle_memory_ops,
             self._handle_exec_ops,
             self._handle_breakpoint_ops,
+            self._handle_watchpoint_ops,
             self._handle_vcont,
         ):
             response = handler(payload)
@@ -295,6 +373,7 @@ class GdbRemoteServer:
                     continue
 
                 print(f"[gdb] client connected: {addr[0]}:{addr[1]}")
+                self._conn = conn
                 with conn:
                     while True:
                         payload = self._read_packet(conn)
@@ -304,6 +383,7 @@ class GdbRemoteServer:
                         if payload == "k":
                             break
                         self._send_packet(conn, response)
+                self._conn = None
                 print("[gdb] client disconnected")
 
 
@@ -318,8 +398,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--max-continue-steps",
         type=int,
-        default=250_000,
-        help="Instruction budget per continue command",
+        default=0,
+        help="Instruction budget per continue (0 = unlimited, stop with Ctrl+C)",
     )
     return parser.parse_args()
 

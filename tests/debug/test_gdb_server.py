@@ -433,3 +433,12 @@ def test_monitor_reset_halt_and_unknown_commands():
     assert server._handle_packet("qRcmd," + b"halt".hex()) == "OK"  # nosec B101
     assert server._handle_packet("qRcmd," + b"bogus".hex()) == ""  # nosec B101
     assert server._handle_packet("qRcmd,zz") == "E01"  # nosec B101
+
+
+def test_watch_packets_unsupported_cpu_and_malformed():
+    server = GdbRemoteServer(GdbTarget(board=DummyBoard()))
+    # DummyCPU has no watchpoint support: gdb falls back to single-stepping.
+    assert server._handle_packet("Z2,2000,4") == ""  # nosec B101
+    assert server._handle_packet("Z3,zz") == "E01"  # nosec B101
+    assert server._handle_packet("z4,2000,4") == "OK"  # nosec B101
+    assert server.target.halt() is None  # nosec B101

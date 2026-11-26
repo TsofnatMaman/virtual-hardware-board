@@ -8,7 +8,8 @@ memory access hooks into the AddressSpace.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Literal
 
 from simulator.core.memmap import AddressSpace
 from simulator.interfaces.cpu import ICPU, CpuSnapshot, RegisterValue
@@ -62,6 +63,18 @@ except ImportError:
     UC_ARM_REG_R8 = UC_ARM_REG_R9 = UC_ARM_REG_R10 = UC_ARM_REG_R11 = 0
     UC_ARM_REG_R12 = UC_ARM_REG_SP = UC_ARM_REG_LR = UC_ARM_REG_PC = 0
     UC_ARM_REG_XPSR = UC_ARM_REG_MSP = 0
+
+
+WatchKind = Literal["read", "write", "access"]
+
+
+@dataclass(frozen=True)
+class WatchHit:
+    """A data watchpoint that fired during the last executed instruction."""
+
+    watch_id: int
+    address: int
+    kind: WatchKind
 
 
 # Map R0-R15, SP, LR, PC
@@ -125,6 +138,16 @@ class UnicornEngine:
             UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE, callback, begin=begin, end=end
         )
 
+    def add_hook(self, callback, begin: int = 1, end: int = 0) -> int:
+        """Add a memory read/write hook; the default range covers everything."""
+        return self.uc.hook_add(
+            UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE, callback, begin=begin, end=end
+        )
+
+    def remove_hook(self, handle: int) -> None:
+        """Remove a hook returned by :meth:`add_hook`."""
+        self.uc.hook_del(handle)
+
     def step(self, pc: int) -> None:
         """Execute one instruction from PC."""
         # Cortex-M is always Thumb; Unicorn expects bit0 set for Thumb execution.
@@ -158,6 +181,10 @@ class CortexM(ICPU):
         self.engine = engine
         self.address_space = address_space
         self._pending_interrupts: list["InterruptEvent"] = []
+        self._watchpoints: dict[int, tuple[int, int, WatchKind]] = {}
+        self._next_watch_id = 1
+        self._watch_hook: int | None = None
+        self._watch_hit: WatchHit | None = None
 
     def reset(self) -> None:
         """Reset CPU: clear registers, load firmware from flash, set PC/MSP.
@@ -269,6 +296,53 @@ class CortexM(ICPU):
         }
 
         return CpuSnapshot(registers=registers, flags=flags)
+
+    # Data watchpoints ------------------------------------------------------
+
+    def add_watchpoint(self, address: int, size: int, kind: WatchKind) -> int:
+        """Watch ``[address, address+size)``; returns a watchpoint id.
+
+        The memory hook is only installed while at least one watchpoint is
+        active, so normal execution pays nothing for this feature.
+        """
+        if size <= 0:
+            raise ValueError("Watchpoint size must be positive")
+        if kind not in ("read", "write", "access"):
+            raise ValueError(f"Invalid watchpoint kind '{kind}'")
+        watch_id = self._next_watch_id
+        self._next_watch_id += 1
+        self._watchpoints[watch_id] = (address, size, kind)
+        if self._watch_hook is None:
+            self._watch_hook = self.engine.add_hook(self._watch_callback)
+        return watch_id
+
+    def remove_watchpoint(self, watch_id: int) -> bool:
+        """Remove a watchpoint; returns False if the id is unknown."""
+        if self._watchpoints.pop(watch_id, None) is None:
+            return False
+        if not self._watchpoints and self._watch_hook is not None:
+            self.engine.remove_hook(self._watch_hook)
+            self._watch_hook = None
+        return True
+
+    def clear_watch_hit(self) -> None:
+        """Forget any pending watchpoint hit."""
+        self._watch_hit = None
+
+    def consume_watch_hit(self) -> WatchHit | None:
+        """Return and clear the watchpoint hit of the last instruction."""
+        hit, self._watch_hit = self._watch_hit, None
+        return hit
+
+    def _watch_callback(self, _uc, access, address, size, _value, _user_data):
+        if self._watch_hit is not None:
+            return
+        kind: WatchKind = "read" if access == UC_MEM_READ else "write"
+        for watch_id, (start, length, watch_kind) in self._watchpoints.items():
+            overlaps = address < start + length and start < address + size
+            if overlaps and watch_kind in ("access", kind):
+                self._watch_hit = WatchHit(watch_id, address, kind)
+                return
 
     # Private helpers -------------------------------------------------------
 

@@ -63,8 +63,12 @@ python -m simulator_gui --board tm4c123 --gdb-port 3333
 python examples/run_gui_with_gdb.py
 ```
 
-Supported protocol subset: register/memory read-write, binary memory write (`X`), `monitor reset`, `step`,
-`continue`, and software breakpoints (`Z0/z0`).
+Supported protocol subset: register/memory read-write, binary memory write (`X`),
+`monitor reset`, `step`, `continue`, software breakpoints (`Z0/z0`) and data
+watchpoints (`watch`, `rwatch`, `awatch` = `Z2/Z3/Z4`) on any memory, including
+stack locals. `continue` runs until a breakpoint/watchpoint fires; press
+**Ctrl+C** (or the IDE pause button) to stop a running program. Use
+`--max-continue-steps N` to bound a continue instead (default `0` = unlimited).
 
 In both headless and GUI GDB modes, `--firmware` is optional: your IDE/GDB can upload
 the program at runtime (using `load`). After code is written to flash, the simulator
