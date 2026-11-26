@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import signal
 import sys
 import threading
 from pathlib import Path
@@ -133,6 +134,9 @@ def run_gui(
         )
         gdb_thread.start()
 
+    # Qt's event loop blocks Python's SIGINT handling; restore the default so
+    # Ctrl+C in the terminal quits the simulator as users expect.
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
     app = QtWidgets.QApplication(sys.argv)
     window = MainWindow(
         controller,
